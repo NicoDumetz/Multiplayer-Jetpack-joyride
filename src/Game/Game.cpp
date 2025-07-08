@@ -102,7 +102,7 @@ void Jetpack::Game::run()
         
         _window.clear();
         drawBackground();
-        drawGrid();
+        // drawGrid();debug
         renderObjects();
         renderPlayers();
         renderScoreDisplay();
@@ -350,10 +350,6 @@ void Jetpack::Game::updateCoinsVisibility()
 
 void Jetpack::Game::initScoreDisplay()
 {
-    _scoreBackground.setSize(sf::Vector2f(120, 10 + this->_client->getExpectedPlayerCount() * 25));
-    _scoreBackground.setFillColor(sf::Color(0, 0, 0, 150));
-    _scoreBackground.setPosition(SCORE_MARGIN_LEFT, SCORE_MARGIN_TOP);
-
     _scoreTexts.clear();
     for (int i = 0; i < this->_client->getExpectedPlayerCount(); ++i) {
         sf::Text scoreText;
@@ -372,8 +368,6 @@ void Jetpack::Game::initScoreDisplay()
 
 void Jetpack::Game::renderScoreDisplay()
 {
-    _window.draw(_scoreBackground);
-
     for (int i = 0; i < std::min(static_cast<int>(_scoreTexts.size()), static_cast<int>(this->_client->getExpectedPlayerCount())); ++i) {
         auto playerState = _sharedState->getPlayerState(i);
         

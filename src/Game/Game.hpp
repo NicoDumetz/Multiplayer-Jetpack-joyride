@@ -29,10 +29,10 @@
 #define ZAPPER_FRAME_RATE 0.08f
 
 /// SCORE DISPLAY ///
-#define SCORE_MARGIN_TOP 10
+#define SCORE_MARGIN_TOP 22
 #define SCORE_MARGIN_LEFT 10
-#define SCORE_SPACING 25
-#define SCORE_FONT_SIZE 18
+#define SCORE_SPACING 2
+#define SCORE_FONT_SIZE 30
 
 namespace Jetpack {
     class Game {
@@ -108,7 +108,6 @@ namespace Jetpack {
         float _scrollOffset = 0.0f;
         float _tileSize = TILE_SIZE;
         const float BACKGROUND_ZOOM = 1.25f;
-        sf::RectangleShape _scoreBackground;
         std::vector<sf::Text> _scoreTexts;
         sf::Sprite _coinIcon;
         sf::Music music;
