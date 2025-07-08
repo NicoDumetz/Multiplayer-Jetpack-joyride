@@ -31,6 +31,9 @@ void Jetpack::Parser::loadMapContent(std::string &filename)
 {
     std::ifstream file(filename);
     std::ostringstream content;
+    int lineCount = 0;
+
+
 
     if (!file.is_open())
         throw ParserError("Unable to open map file: " + filename);
@@ -39,5 +42,13 @@ void Jetpack::Parser::loadMapContent(std::string &filename)
     for (char c : this->_map) {
         if (c != '_' && c != 'e' && c != 'c' && c != '\n')
             throw ParserError("Invalid character in map file: '" + std::string(1, c) + "'");
+        if (c == '\n')
+            lineCount++;
     }
+
+    if (!this->_map.empty() && this->_map.back() != '\n')
+        lineCount++;
+
+    if (lineCount > MAX_LINES)
+        throw ParserError("Map file exceeds maximum number of lines: " + std::to_string(MAX_LINES));
 }

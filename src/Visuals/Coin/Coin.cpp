@@ -24,4 +24,12 @@ void Coin::update(float dt)
     GameObject::update(dt);
 }
 
+std::pair<int, int> Coin::getTilePosition() const
+{
+    int tileX = static_cast<int>(_initialPos.x / TILE_SIZE);
+    int tileY = static_cast<int>((_initialPos.y - TILE_MARGIN) / TILE_SIZE);
+
+    return {tileX, tileY};
+}
+
 } // namespace Jetpack

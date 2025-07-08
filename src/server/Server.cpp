@@ -410,15 +410,26 @@ void Jetpack::Server::checkCollisions(PlayerState &player)
 
     for (int y = tileYTop; y <= tileYBottom; ++y) {
         for (int x = tileXLeft; x <= tileXRight; ++x) {
-            if (y < 0 || y >= static_cast<int>(player.map.size()) ||
-                x < 0 || x >= static_cast<int>(player.map[0].size()))
+            if (y < 0 || y >= static_cast<int>(_map.size()) ||
+                x < 0 || x >= static_cast<int>(_map[0].size()))
                 continue;
-            TileType tile = player.map[y][x];
+
+            TileType tile = _map[y][x];
+            
             if (tile == TileType::COIN) {
-                player.map[y][x] = TileType::EMPTY;
-                player.addCoin();
-                sendCoinEvent(player.getId(), x, y);
-                this->sendMap(player.getId(), player.map);
+                bool alreadyCollected = false;
+                for (const auto& coinPos : player.getCoinCollected()) {
+                    if (coinPos.first == x && coinPos.second == y) {
+                        alreadyCollected = true;
+                        break;
+                    }
+                }
+
+                if (!alreadyCollected) {
+                    player.addCoin();
+                    player.addCoinCollected(x, y);
+                    sendCoinEvent(player.getId(), x, y);
+                }
             } else if (tile == TileType::ZAPPER) {
                 player.setAlive(false);
                 return;

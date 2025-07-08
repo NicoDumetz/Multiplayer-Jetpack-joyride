@@ -46,4 +46,19 @@ void GameObject::move(float x, float y)
     _sprite.move(x, y);
 }
 
+void GameObject::setTransparent(bool transparent)
+{
+    _transparent = transparent;
+}
+
+bool GameObject::isTransparent() const
+{
+    return _transparent;
+}
+
+sf::Vector2f GameObject::getPosition() const
+{
+    return _initialPos;
+}
+
 } // namespace Jetpack
