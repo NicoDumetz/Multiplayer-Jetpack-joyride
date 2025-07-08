@@ -59,16 +59,18 @@ void Jetpack::Client::handshakeWithServer()
     Jetpack::Packet login = Jetpack::ProtocolUtils::receivePacket(this->_socket);
     Jetpack::Packet map;
 
-    if (login.type != LOGIN_RESPONSE || login.payload.size() != 1)
+    if (login.type != LOGIN_RESPONSE || login.payload.size() < 3 || login.payload[1] != 0)
         throw ClientError("Invalid LOGIN_RESPONSE");
     this->_playerId = login.payload[0];
+    this->_numberClients = login.payload[2];
+    this->_sharedState->initPlayers(this->_numberClients);
     Jetpack::Utils::consoleLog("Login accepted by server, has ID " + std::to_string(this->_playerId), Jetpack::LogInfo::INFO);
+    Jetpack::Utils::consoleLog("Waiting for " + std::to_string(this->_numberClients) + " players to be ready.", Jetpack::LogInfo::INFO);
     map = Jetpack::ProtocolUtils::receivePacket(this->_socket);
     if (map.type != MAP_TRANSFER)
         throw ClientError("Expected MAP_TRANSFER");
     this->handleMap(map);
     this->_state = ClientState::Waiting;
-    Jetpack::Utils::consoleLog("Waiting game start...", Jetpack::LogInfo::INFO);
 }
 
 void Jetpack::Client::waitForGameStart()
@@ -167,9 +169,16 @@ void Jetpack::Client::handleGameOver(const Jetpack::Packet &paquet)
 {
     if (paquet.payload.empty())
         return;
-    uint8_t winnerId = paquet.payload[0];
-    this->_state = Jetpack::ClientState::GameOver;
-    this->_gameOverWinnerId = winnerId;
+    uint8_t winner = paquet.payload[0];
+
+    if (winner == 255)
+        Jetpack::Utils::consoleLog("Game over: It's a tie!", Jetpack::LogInfo::SUCCESS);
+    else if (winner == this->_playerId)
+        Jetpack::Utils::consoleLog("Game over: You win!", Jetpack::LogInfo::SUCCESS);
+    else
+        Jetpack::Utils::consoleLog("Game over: Player " + std::to_string(winner) + " wins", Jetpack::LogInfo::SUCCESS);
+    this->_state = ClientState::Disconnected;
+    this->_sharedState->setGameOver(true);
 }
 
 void Jetpack::Client::handleActionAck(const Jetpack::Packet& paquet)

@@ -14,8 +14,8 @@
 /*                                                                            */
 /******************************************************************************/
 
-Jetpack::Server::Server(int port, std::string map)
-    : _port(port), _serverSocket(-1)
+Jetpack::Server::Server(int port, std::string map, int expectedPlayers)
+    : _port(port), _serverSocket(-1), _numberClients(expectedPlayers)
 {
     try {
         this->setupServer();
@@ -208,7 +208,7 @@ void Jetpack::Server::run()
             continue;
         this->handleNewClient(pollFds);
         this->handleClientActivity(pollFds);
-        if (this->countReadyClients() == NUMBER_CLIENTS) {
+        if (this->countReadyClients() == this->_numberClients) {
             this->startGameLoop();
             break;
         }
@@ -266,13 +266,13 @@ void Jetpack::Server::handleLogin(int fd, const Jetpack::Packet&)
     id = static_cast<uint8_t>(index);
     this->_clients[index]->setId(id);
     this->_clients[index]->setReady(true);
-    Jetpack::ProtocolUtils::sendPacket(fd, LOGIN_RESPONSE, {id});
+    Jetpack::ProtocolUtils::sendPacket(fd, LOGIN_RESPONSE, {id, 0, static_cast<uint8_t>(this->_numberClients)});
     Jetpack::Utils::consoleLog("New Client accepted, has ID " + std::to_string(id), Jetpack::LogInfo::SUCCESS);
     this->sendMap(id, this->_map);
     waitingPlayers = static_cast<uint8_t>(this->countReadyClients());
     for (const auto &client : this->_clients)
         Jetpack::ProtocolUtils::sendPacket(client->getSocket(), WAITING_PLAYERS_COUNT, {waitingPlayers});
-    if (this->countReadyClients() == NUMBER_CLIENTS)
+    if (this->countReadyClients() == this->_numberClients)
         this->lunchStart();
     else
         Jetpack::Utils::consoleLog("Client ID " + std::to_string(id) + " is waiting...", Jetpack::LogInfo::INFO);

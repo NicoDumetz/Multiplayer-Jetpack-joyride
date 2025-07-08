@@ -30,8 +30,7 @@ namespace Jetpack {
     enum class ClientState {
         Disconnected,
         Waiting,
-        Connected,
-        GameOver
+        Connected
     };
     class Client {
         public:
@@ -46,6 +45,7 @@ namespace Jetpack {
 
             void run();
             ClientState getState() const {return this->_state;}
+            uint8_t getExpectedPlayerCount() const {return this->_numberClients;}
             int getSocket() const {return this->_socket;}
             uint8_t getPlayerId () const {return this->_playerId;}
             void handshakeWithServer();
@@ -63,13 +63,12 @@ namespace Jetpack {
             inline const std::vector<std::vector<TileType>>& getMap() const {return this->_map;}
             void handleMap(const Jetpack::Packet &paquet);
             void disconnect();
-            uint8_t getGameOverWinnerId() const { return _gameOverWinnerId; }
 
         private:
             int _socket;
             ClientState _state;
             uint8_t _playerId;
-            uint8_t _gameOverWinnerId = 0;
+            uint8_t _numberClients = 0;
             std::vector<std::vector<TileType>> _map;
             std::map<uint8_t, std::function<void(const Packet&)>> _packetHandlers = {
                 {GAME_STATE, [this](const Packet &paquet) {this->handleGameState(paquet);}},

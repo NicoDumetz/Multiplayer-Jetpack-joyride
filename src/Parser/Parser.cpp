@@ -18,11 +18,18 @@ Jetpack::Parser::Parser(int ac, char **av, Mode mode)
             this->_ip = av[++i];
         else if (!Jetpack::String::strcmp(av[i], "-m") && i + 1 < ac)
             filename = av[++i];
-        else
+        else if (!Jetpack::String::strcmp(av[i], "-n") && i + 1 < ac && Jetpack::Utils::isNumber(av[i + 1])) {
+            int value = std::stoi(av[++i]);
+            if (value < 2 || value > NUMBER_CLIENTS_MAX)
+                throw ParserError("Player count must be between 2 and " + NUMBER_CLIENTS_MAX );
+            this->_expectedPlayers = value;
+        } else
             throw ParserError("Invalid or missing arguments");
     }
     if (_port == 0 || (this->_mode == Jetpack::Mode::CLIENT && this->_ip.empty()) || (this->_mode == Jetpack::Mode::SERVER && filename.empty()))
         throw ParserError(this->_mode == Jetpack::Mode::CLIENT ? "Missing required arguments (-h or -p)" : "Missing required arguments (-p or -m)");
+    if (this->_mode == Jetpack::Mode::CLIENT && this->_expectedPlayers != 2)
+        throw ParserError("Client cannot specify -n (player count)");
     if (this->_mode == Jetpack::Mode::SERVER)
         this->loadMapContent(filename);
 }
@@ -32,8 +39,6 @@ void Jetpack::Parser::loadMapContent(std::string &filename)
     std::ifstream file(filename);
     std::ostringstream content;
     int lineCount = 0;
-
-
 
     if (!file.is_open())
         throw ParserError("Unable to open map file: " + filename);
