@@ -6,6 +6,7 @@
 */
 
 #include "server/Server.hpp"
+#include <algorithm>
 
 /******************************************************************************/
 /*                                                                            */
@@ -293,20 +294,13 @@ void Jetpack::Server::handlePlayerAction(int fd, const Jetpack::Packet& paquet)
     Jetpack::ProtocolUtils::sendPacket(fd, ACTION_ACK, ackPayload);
 }
 
-void Jetpack::Server::sendCoinEvent(uint8_t playerId, int coinX, int coinY)
+void Jetpack::Server::sendCoinEvent(uint8_t playerId)
 {
     std::vector<uint8_t> payload = {playerId};
-    uint8_t xBytes[sizeof(coinX)];
-    uint8_t yBytes[sizeof(coinY)];
 
-    std::memcpy(xBytes, &coinX, sizeof(coinX));
-    std::memcpy(yBytes, &coinY, sizeof(coinY));
-    payload.insert(payload.end(), xBytes, xBytes + sizeof(coinX));
-    payload.insert(payload.end(), yBytes, yBytes + sizeof(coinY));
     for (const auto &client : this->_clients)
         Jetpack::ProtocolUtils::sendPacket(client->getSocket(), COIN_EVENT, payload);
 }
-
 
 void Jetpack::Server::sendGameState()
 {
@@ -399,7 +393,7 @@ void Jetpack::Server::checkCollisions(PlayerState &player)
     if (tile == TileType::COIN) {
         player.map[player.getTileY()][player.getTileX()] = TileType::EMPTY;
         player.addCoin();
-        sendCoinEvent(player.getId(), player.getCurrentX(), player.getCurrentY());
+        sendCoinEvent(player.getId());
     } else if (tile == TileType::ZAPPER)
         player.setAlive(false);
 }

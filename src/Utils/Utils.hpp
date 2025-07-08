@@ -49,7 +49,7 @@
 #define INVALID_ID 255
 #define JETPACK_JUMP_SPEED 6.0f // tiles/second
 #define TICK_INTERVAL (1.0f / 60.0f) // seconds
-#define FRAGMENT_SIZE 1024U // size max of paquet
+
 
 namespace Jetpack {
     enum class TileType {
@@ -134,6 +134,8 @@ namespace Jetpack {
             oss << std::hex << std::uppercase << std::setfill('0') << std::setw(2) << static_cast<int>(value);
             return oss.str();
         }
+
+        static void checkDisplay(char **env);
 
     };
     std::ostream& operator<<(std::ostream& os, const LogInfo& color);
