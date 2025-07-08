@@ -72,10 +72,10 @@ void Jetpack::Game::run()
         while (_window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) {
                 _window.close();
-                throw GameError("Window closed by user");
+                this->_client->disconnect();
             } else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
                 _window.close();
-                throw GameError("Game exited by user (Escape key)");
+                this->_client->disconnect();
             }
         }
         deltaTime = clock.restart().asSeconds();
@@ -100,6 +100,7 @@ void Jetpack::Game::waitingRoom()
 {
     sf::Text text("Waiting for players...", _font, 60);
     text.setFillColor(sf::Color::White);
+
     sf::FloatRect bounds = text.getLocalBounds();
     text.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
     text.setPosition(WINDOW_WIDTH / 2.f, WINDOW_HEIGHT / 2.f);
@@ -108,10 +109,12 @@ void Jetpack::Game::waitingRoom()
         sf::Event event;
         while (_window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) {
+                _client->disconnect();
                 _window.close();
+                return;
             } else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
                 _window.close();
-                throw GameError("Game exited by user (Escape key)");
+                return;
             }
         }
         _window.clear();
