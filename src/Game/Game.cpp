@@ -68,7 +68,7 @@ void Jetpack::Game::run()
         updateAnimation();
         updatePlayerPositions();
         updateObjects(deltaTime);
-        updateCoinsVisibility(); // Add this line to update coin visibility
+        updateCoinsVisibility();
         if (_window.hasFocus() && sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
             _client->sendJump();
         _window.clear();
@@ -194,11 +194,18 @@ void Jetpack::Game::drawBackground()
     float baseScale = WINDOW_HEIGHT / static_cast<float>(_mapTexture.getSize().y);
     float finalScale = baseScale * BACKGROUND_ZOOM;
     _mapSprite.setScale(finalScale, finalScale);
+    
+    float mapWidth = _mapTexture.getSize().x * finalScale;
     float mapHeight = _mapTexture.getSize().y * finalScale;
     float y = (WINDOW_HEIGHT - mapHeight) / 2.0f;
-    float x = -_scrollOffset;
-    _mapSprite.setPosition(x, y);
-    _window.draw(_mapSprite);
+    
+    float effectiveScrollOffset = std::fmod(_scrollOffset, mapWidth);
+    
+    for (int i = -1; i < 2; i++) {
+        float x = -effectiveScrollOffset + (i * mapWidth);
+        _mapSprite.setPosition(x, y);
+        _window.draw(_mapSprite);
+    }
 }
 
 void Jetpack::Game::initObjectsFromMap()
