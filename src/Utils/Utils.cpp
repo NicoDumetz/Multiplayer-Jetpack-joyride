@@ -6,8 +6,6 @@
 */
 
 #include "Utils.hpp"
-#include "Error/Error.hpp"
-#include <regex>
 
 
 std::ostream& Jetpack::operator<<(std::ostream& os, const Jetpack::LogInfo& color)
@@ -43,21 +41,4 @@ void Jetpack::Utils::consoleLog(const std::string &msg, LogInfo color)
               << color
               << " " << msg
               << "\033[0m" << std::endl;
-}
-
-void Jetpack::Utils::checkDisplay(char **env)
-{
-    std::regex displayRegex(R"(^(:[0-9]+(.[0-9]+)?)$)");
-    std::string lines;
-    bool envDisplay = false;
-
-    for (int i = 0; env[i]; i++) {
-        lines = env[i];
-        if (lines.rfind("DISPLAY=", 0) == 0 && std::regex_match(lines.substr(8), displayRegex)) {
-            envDisplay = true;
-            break;
-        }
-    }
-    if (!envDisplay)
-        throw Error("Error: DISPLAY is missing or invalid. Please run in a graphical environment.");
 }

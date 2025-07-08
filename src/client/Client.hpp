@@ -49,7 +49,6 @@ namespace Jetpack {
             uint8_t getPlayerId () const {return this->_playerId;}
             void handshakeWithServer();
             void waitForGameStart();
-            void parseMapPayload(const std::vector<uint8_t> &payload);
 
             void handleGameState(const Jetpack::Packet &paquet);
             void handlePositionUpdate(const Jetpack::Packet &paquet);
@@ -60,6 +59,7 @@ namespace Jetpack {
             inline std::shared_ptr<SharedGameState> getSharedState() const {return this->_sharedState;}
             void sendJump();
             void handleActionAck(const Jetpack::Packet &paquet);
+            void handleMap(const Jetpack::Packet &paquet);
 
         private:
             int _socket;
@@ -67,12 +67,13 @@ namespace Jetpack {
             uint8_t _playerId;
             std::vector<std::vector<TileType>> _map;
             std::map<uint8_t, std::function<void(const Packet&)>> _packetHandlers = {
-                {GAME_STATE, [this](const Packet& paquet) {this->handleGameState(paquet);}},
-                {COIN_EVENT, [this](const Packet& paquet) {this->handleCoinEvent(paquet);}},
-                {POSITION_UPDATE, [this](const Packet& paquet) {this->handlePositionUpdate(paquet);}},
-                {PLAYER_ELIMINATED, [this](const Packet& paquet) {this->handlePlayerEliminated(paquet);}},
-                {GAME_OVER, [this](const Packet& paquet) {this->handleGameOver(paquet);}},
-                {ACTION_ACK, [this](const Packet& paquet) {this->handleActionAck(paquet);}}
+                {GAME_STATE, [this](const Packet &paquet) {this->handleGameState(paquet);}},
+                {COIN_EVENT, [this](const Packet &paquet) {this->handleCoinEvent(paquet);}},
+                {POSITION_UPDATE, [this](const Packet &paquet) {this->handlePositionUpdate(paquet);}},
+                {PLAYER_ELIMINATED, [this](const Packet &paquet) {this->handlePlayerEliminated(paquet);}},
+                {GAME_OVER, [this](const Packet &paquet) {this->handleGameOver(paquet);}},
+                {ACTION_ACK, [this](const Packet &paquet) {this->handleActionAck(paquet);}},
+                {MAP_TRANSFER, [this](const Packet &paquet) {this->handleMap(paquet);}}
             };
             std::shared_ptr<SharedGameState> _sharedState;
             bool _ACKPlayerAction;

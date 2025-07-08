@@ -12,11 +12,10 @@
 #include <thread>
 #include <exception>
 
-int main(int ac, char **av, char **env)
+int main(int ac, char **av)
 {
     try {
         Jetpack::Parser args(ac, av, Jetpack::Mode::CLIENT);
-        Jetpack::Utils::checkDisplay(env);
         auto client = std::make_shared<Jetpack::Client>(args);
         client->handshakeWithServer();
         Jetpack::Game game(client);

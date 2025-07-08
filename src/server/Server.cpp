@@ -6,7 +6,6 @@
 */
 
 #include "server/Server.hpp"
-#include <algorithm>
 
 /******************************************************************************/
 /*                                                                            */
@@ -246,7 +245,6 @@ void Jetpack::Server::handleLogin(int fd, const Jetpack::Packet&)
 {
     int index = this->findClientIndexByFd(fd);
     uint8_t id;
-    std::vector<uint8_t> payload;
     uint8_t waitingPlayers;
 
     if (index == -1)
@@ -256,13 +254,7 @@ void Jetpack::Server::handleLogin(int fd, const Jetpack::Packet&)
     this->_clients[index]->setReady(true);
     Jetpack::ProtocolUtils::sendPacket(fd, LOGIN_RESPONSE, {id});
     Jetpack::Utils::consoleLog("New Client accepted, has ID " + std::to_string(id), Jetpack::LogInfo::SUCCESS);
-    payload.clear();
-    for (auto &row : this->_map) {
-        for (TileType tile : row)
-            payload.push_back(static_cast<uint8_t>(tile));
-        payload.push_back('\n');
-    }
-    Jetpack::ProtocolUtils::sendPacket(fd, MAP_TRANSFER, payload);
+    this->sendMap(id, this->_map);
     waitingPlayers = static_cast<uint8_t>(this->countReadyClients());
     for (const auto &client : this->_clients)
         Jetpack::ProtocolUtils::sendPacket(client->getSocket(), WAITING_PLAYERS_COUNT, {waitingPlayers});
@@ -294,13 +286,20 @@ void Jetpack::Server::handlePlayerAction(int fd, const Jetpack::Packet& paquet)
     Jetpack::ProtocolUtils::sendPacket(fd, ACTION_ACK, ackPayload);
 }
 
-void Jetpack::Server::sendCoinEvent(uint8_t playerId)
+void Jetpack::Server::sendCoinEvent(uint8_t playerId, int coinX, int coinY)
 {
     std::vector<uint8_t> payload = {playerId};
+    uint8_t xBytes[sizeof(coinX)];
+    uint8_t yBytes[sizeof(coinY)];
 
+    std::memcpy(xBytes, &coinX, sizeof(coinX));
+    std::memcpy(yBytes, &coinY, sizeof(coinY));
+    payload.insert(payload.end(), xBytes, xBytes + sizeof(coinX));
+    payload.insert(payload.end(), yBytes, yBytes + sizeof(coinY));
     for (const auto &client : this->_clients)
         Jetpack::ProtocolUtils::sendPacket(client->getSocket(), COIN_EVENT, payload);
 }
+
 
 void Jetpack::Server::sendGameState()
 {
@@ -329,6 +328,21 @@ void Jetpack::Server::sendPositionUpdate(uint8_t playerId, float x, float y)
     payload.insert(payload.end(), yBytes, yBytes + sizeof(y));
     for (const auto &client : this->_clients)
         Jetpack::ProtocolUtils::sendPacket(client->getSocket(), POSITION_UPDATE, payload);
+}
+
+void Jetpack::Server::sendMap(int playerId, const std::vector<std::vector<TileType>> &map)
+{
+    std::vector<uint8_t> payload;
+    payload.push_back(playerId);
+
+    for (const auto &row : map) {
+        for (TileType tile : row) {
+            payload.push_back(static_cast<uint8_t>(tile));
+        }
+        payload.push_back('\n');
+    }
+    for (const auto &client : this->_clients)
+        Jetpack::ProtocolUtils::sendPacket(client->getSocket(), MAP_TRANSFER, payload);
 }
 
 /******************************************************************************/
@@ -383,6 +397,7 @@ void Jetpack::Server::processPlayers(int mapHeight, int mapWidth)
         }
         this->checkCollisions(player);
         this->sendPositionUpdate(player.getId(), player.getX(), player.getY());
+        this->sendMap(player.getId(), player.map);
     }
 }
 
@@ -393,7 +408,7 @@ void Jetpack::Server::checkCollisions(PlayerState &player)
     if (tile == TileType::COIN) {
         player.map[player.getTileY()][player.getTileX()] = TileType::EMPTY;
         player.addCoin();
-        sendCoinEvent(player.getId());
+        sendCoinEvent(player.getId(), player.getCurrentX(), player.getCurrentY());
     } else if (tile == TileType::ZAPPER)
         player.setAlive(false);
 }
