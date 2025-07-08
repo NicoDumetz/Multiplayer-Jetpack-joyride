@@ -76,7 +76,7 @@ namespace Jetpack {
 
         void startGameLoop();
         void sendGameState();
-        void sendCoinEvent(uint8_t playerId);
+        void sendCoinEvent(uint8_t playerId, int coinX, int coinY);
         void sendPositionUpdate(uint8_t playerId, float x, float y);
         void handleLogin(int fd, const Jetpack::Packet& pkt);
         void handlePlayerAction(int fd, const Jetpack::Packet& pkt);

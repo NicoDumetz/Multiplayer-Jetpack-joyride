@@ -143,8 +143,14 @@ void Jetpack::Client::handleCoinEvent(const Jetpack::Packet &paquet)
     if (paquet.payload.empty())
         return;
     uint8_t playerId = paquet.payload[0];
-    Jetpack::PlayerState& playerState = this->_sharedState->getPlayerState(playerId);
+    int coinX;
+    int coinY;
+
+    std::memcpy(&coinX, &paquet.payload[1], sizeof(coinX));
+    std::memcpy(&coinY, &paquet.payload[1 + sizeof(coinX)], sizeof(coinY));
+    Jetpack::PlayerState &playerState = this->_sharedState->getPlayerState(playerId);
     playerState.addCoin();
+    playerState.addCoinCollected(coinX, coinY);
 }
 
 void Jetpack::Client::handlePlayerEliminated(const Jetpack::Packet &paquet)
