@@ -26,11 +26,6 @@
 /******************************************************************************/
 
 namespace Jetpack {
-    enum class ClientState {
-        Disconnected,
-        Waiting,
-        Connected
-    };
     class Client {
         public:
             class ClientError : public Jetpack::Error {
@@ -45,23 +40,21 @@ namespace Jetpack {
             void run();
             int getSocket() const {return this->_socket;}
             void connectToServer();
-            void parseMapPayload(const std::vector<uint8_t> &payload);
+
+        private:
+            int _socket;
+            bool _connected;
+            std::string _buffer;
+            std::map<uint8_t, std::function<void(const Packet&)>> _packetHandlers = {
+                {0x06, [this](const Packet& paquet) {this->handleGameState(paquet);}},
+                {0x07, [this](const Packet& paquet) {this->handleCoinEvent(paquet);}},
+                {0x08, [this](const Packet& paquet) {this->handlePlayerEliminated(paquet);}},
+                {0x09, [this](const Packet& paquet) {this->handleGameOver(paquet);}}
+            };
 
             void handleGameState(const Jetpack::Packet &paquet);
             void handleCoinEvent(const Jetpack::Packet &paquet);
             void handlePlayerEliminated(const Jetpack::Packet &paquet);
             void handleGameOver(const Jetpack::Packet &paquet);
-
-        private:
-            int _socket;
-            ClientState _state;
-            uint8_t _playerId;
-            std::vector<std::vector<TileType>> _map;
-            std::map<uint8_t, std::function<void(const Packet&)>> _packetHandlers = {
-                {GAME_STATE, [this](const Packet& paquet) {this->handleGameState(paquet);}},
-                {COIN_EVENT, [this](const Packet& paquet) {this->handleCoinEvent(paquet);}},
-                {PLAYER_ELIMINATED, [this](const Packet& paquet) {this->handlePlayerEliminated(paquet);}},
-                {GAME_OVER, [this](const Packet& paquet) {this->handleGameOver(paquet);}}
-            };
     };
 }

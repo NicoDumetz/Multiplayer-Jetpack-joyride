@@ -7,7 +7,7 @@
 
 #pragma once
 #include <cstring>
-#include "Error/Error.hpp"
+#include "Error.hpp"
 
 namespace Jetpack {
     class String {

@@ -21,26 +21,7 @@
 #define FTP_BUFFER_SIZE 1024
 #define FTP_SMALL_BUFFER 256
 #define FTP_PATH_BUFFER 512
-
-// Client -> Serveur
-#define LOGIN_REQUEST        0x01
-#define PLAYER_ACTION        0x05
-
-// Serveur -> Client
-#define LOGIN_RESPONSE       0x02
-#define MAP_TRANSFER         0x03
-#define GAME_START           0x04
-#define GAME_STATE           0x06
-#define COIN_EVENT           0x07
-#define PLAYER_ELIMINATED    0x08
-#define GAME_OVER            0x09
-
 namespace Jetpack {
-    enum class TileType {
-        EMPTY,
-        COIN,
-        ZAPPER
-    };
 
     struct Packet {
         uint8_t type;
@@ -121,19 +102,5 @@ namespace Jetpack {
 
     };
     std::ostream& operator<<(std::ostream& os, const LogInfo& color);
-
-    inline std::ostream& operator<<(std::ostream& os, TileType tile)
-    {
-        switch (tile) {
-            case TileType::EMPTY:
-                return os << '_';
-            case TileType::COIN:
-                return os << 'c';
-            case TileType::ZAPPER:
-                return os << 'e';
-            default:
-                return os << '?';
-        }
-    }
 }
 
