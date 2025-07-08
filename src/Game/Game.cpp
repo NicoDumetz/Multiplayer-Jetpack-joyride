@@ -58,11 +58,24 @@ void Jetpack::Game::run()
 
     playMusic("theme", 50.f);
 
-    while (_window.isOpen() && _client->getState() == Jetpack::ClientState::Connected) {
+    while (_window.isOpen()) {
+        if (_client->getState() == Jetpack::ClientState::GameOver) {
+            music.stop();
+            showGameOverScreen(_client->getGameOverWinnerId());
+            break;
+        }
+        
+        if (_client->getState() != Jetpack::ClientState::Connected) {
+            break;
+        }
+        
         while (_window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) {
                 _window.close();
                 throw GameError("Window closed by user");
+            } else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+                _window.close();
+                throw GameError("Game exited by user (Escape key)");
             }
         }
         deltaTime = clock.restart().asSeconds();
@@ -94,13 +107,29 @@ void Jetpack::Game::waitingRoom()
     while (_window.isOpen() && _client->getState() == Jetpack::ClientState::Waiting) {
         sf::Event event;
         while (_window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed)
+            if (event.type == sf::Event::Closed) {
                 _window.close();
+            } else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+                _window.close();
+                throw GameError("Game exited by user (Escape key)");
+            }
         }
         _window.clear();
         _window.draw(text);
         _window.display();
     }
+}
+
+void Jetpack::Game::showGameOverScreen(uint8_t winnerId)
+{
+    if (!_gameOverScreen) {
+        _gameOverScreen = std::make_unique<GameOverScreen>(_window, _font, _sharedState);
+        _gameOverScreen->_soundCallback = [this](const std::string& name, float volume) {
+            this->playSound(name, volume);
+        };
+    }
+    
+    _gameOverScreen->run(winnerId);
 }
 
 void Jetpack::Game::updateMapScroll(float dt)
