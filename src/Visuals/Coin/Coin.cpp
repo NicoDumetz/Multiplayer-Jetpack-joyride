@@ -19,11 +19,8 @@ Coin::Coin(const sf::Texture& texture, float x, float y, float tileSize)
 
 void Coin::update(float dt)
 {
-    float posX = _sprite.getPosition().x;
-
-    if (posX + _sprite.getGlobalBounds().width < 0 || posX > WINDOW_WIDTH)
+    if (this->_pos.x < 0 || this->_pos.x > WINDOW_WIDTH)
         return;
-
     GameObject::update(dt);
 }
 
