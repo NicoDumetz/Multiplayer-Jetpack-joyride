@@ -28,6 +28,11 @@ void Jetpack::Game::initGraphics()
         throw GameError("Failed to load font");
     if (!_mapTexture.loadFromFile("assets/background.png"))
         throw GameError("Failed to load map texture");
+    if (!_coinTexture.loadFromFile("assets/coin.png"))
+        throw GameError("Failed to load coin texture");
+    if (!_zapperTexture.loadFromFile("assets/zapper.png"))
+        throw GameError("Failed to load zapper texture");
+    initObjectsFromMap();
     baseScale = WINDOW_HEIGHT / static_cast<float>(_mapTexture.getSize().y);
     _mapSprite.setTexture(_mapTexture);
     _mapSprite.setScale(baseScale * BACKGROUND_ZOOM, baseScale * BACKGROUND_ZOOM);
@@ -43,7 +48,6 @@ void Jetpack::Game::initGraphics()
     }
     _animationClock.restart();
 }
-
 void Jetpack::Game::run()
 {
     sf::Event event;
@@ -60,12 +64,14 @@ void Jetpack::Game::run()
         deltaTime = clock.restart().asSeconds();
         updateMapScroll(deltaTime);
         updateAnimation();
+        updatePlayerPositions();
+        updateObjects(deltaTime);
         if (_window.hasFocus() && sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
             _client->sendJump();
-        updatePlayerPositions();
         _window.clear();
         drawBackground();
         drawGrid();
+        renderObjects();
         renderPlayers();
         _window.display();
     }
@@ -130,8 +136,8 @@ void Jetpack::Game::updatePlayerPositions()
             continue;
         _playerSprites[i].setOrigin(0.f, 0.f);
         float y = state.getY();
-        if (y < 0.1f) y = 0.f;
-        y = std::clamp(y, 0.f, static_cast<float>(TILE_ROWS - 1));
+        if (y < 0.1f)
+            y = 0.f;
         float spriteH = PLAYER_SPRITE_HEIGHT * PLAYER_SCALE;
         float spriteW = PLAYER_SPRITE_WIDTH * PLAYER_SCALE;
         float spriteX = fixedX + tileSize / 2.f - spriteW / 2.f;
@@ -189,4 +195,44 @@ void Jetpack::Game::drawBackground()
     float x = -_scrollOffset;
     _mapSprite.setPosition(x, y);
     _window.draw(_mapSprite);
+}
+
+void Jetpack::Game::initObjectsFromMap()
+{
+    const auto& map = _client->getMap();
+    float tileSize = TILE_SIZE;
+
+    for (std::size_t y = 0; y < map.size(); y++) {
+        for (std::size_t x = 0; x < map[y].size(); x++) {
+            TileType tile = map[y][x];
+            switch (tile) {
+                case TileType::COIN:
+                    _coins.emplace_back(_coinTexture, x, y, tileSize);
+                    break;
+                case TileType::ZAPPER:
+                    _zappers.emplace_back(_zapperTexture, x, y, tileSize);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+}
+
+void Jetpack::Game::updateObjects(float dt)
+{
+    for (auto& coin : _coins)
+        coin.update(dt);
+    for (auto& zapper : _zappers)
+        zapper.update(dt);
+}
+
+void Jetpack::Game::renderObjects()
+{
+    float scrollX = _scrollOffset;
+    float offsetX = -scrollX + FIXED_PLAYER_X;
+    for (auto& coin : _coins)
+        coin.draw(_window, offsetX);
+    for (auto& zapper : _zappers)
+        zapper.draw(_window, offsetX);
 }

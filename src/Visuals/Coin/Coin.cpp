@@ -6,21 +6,25 @@
 */
 
 #include "Coin.hpp"
+#include "../settings.hpp"
 #include "Game/Game.hpp"
 
 namespace Jetpack {
 
-Coin::Coin(const sf::Texture& texture, float x, float y, float tileSize): GameObject(texture, x, y, tileSize, COIN_FRAME)
+Coin::Coin(const sf::Texture& texture, float x, float y, float tileSize)
+    : GameObject(texture, x, y, tileSize, COIN_FRAME)
 {
-    this->_frameRate = COIN_FRAME_RATE;
+    _frameRate = COIN_FRAME_RATE;
 }
 
 void Coin::update(float dt)
 {
-    float pos = this->_sprite.getPosition().x;
+    float posX = _sprite.getPosition().x;
 
-    if (pos < 0 || pos > WINDOW_WIDTH)
+    if (posX + _sprite.getGlobalBounds().width < 0 || posX > WINDOW_WIDTH)
         return;
+
     GameObject::update(dt);
 }
-}
+
+} // namespace Jetpack

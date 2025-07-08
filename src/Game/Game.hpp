@@ -48,6 +48,9 @@ namespace Jetpack {
         void drawGrid();
         void drawBackground();
         int getPlayerAnimationRow(int playerId, float playerY) const;
+        void initObjectsFromMap();
+        void updateObjects(float dt);
+        void renderObjects();
 
     private:
         std::shared_ptr<Jetpack::Client> _client;
@@ -59,6 +62,10 @@ namespace Jetpack {
         sf::Texture _playerSpriteSheet;
         std::vector<sf::Sprite> _playerSprites;
         sf::Clock _animationClock;
+        std::vector<Jetpack::Coin> _coins;
+        std::vector<Jetpack::Zapper> _zappers;
+        sf::Texture _coinTexture;
+        sf::Texture _zapperTexture;
         int _currentFrame = 0;
         float _frameTime = ANIMATION_FRAME_TIME;
         float _scrollOffset = 0.0f;

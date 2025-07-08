@@ -6,12 +6,15 @@
 */
 
 #include "Zapper.hpp"
+#include "../settings.hpp"
 #include "Game/Game.hpp"
 
 namespace Jetpack {
 
-Zapper::Zapper(const sf::Texture& texture, float x, float y, float tileSize) : GameObject(texture, x, y, tileSize, ZAPPER_FRAME)
+Zapper::Zapper(const sf::Texture& texture, float x, float y, float tileSize)
+    : GameObject(texture, x, y, tileSize, ZAPPER_FRAME)
 {
-    this->_frameRate = ZAPPER_FRAME_RATE;
+    _frameRate = ZAPPER_FRAME_RATE;
 }
-}
+
+} // namespace Jetpack

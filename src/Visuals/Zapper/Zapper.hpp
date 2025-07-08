@@ -9,14 +9,16 @@
 #define ZAPPER_HPP_
 
 #include "Visuals/GameObject.hpp"
-#include <SFML/Graphics/Texture.hpp>
+#include <SFML/Graphics.hpp>
 
 namespace Jetpack {
 
 class Zapper : public GameObject {
-    public:
+public:
     Zapper(const sf::Texture& texture, float x, float y, float tileSize);
     ~Zapper() = default;
 };
-}
-#endif // !
+
+} // namespace Jetpack
+
+#endif // ZAPPER_HPP_

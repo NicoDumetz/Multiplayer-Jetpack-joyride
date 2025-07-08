@@ -7,8 +7,8 @@
 
 #ifndef GAMEOBJECT_HPP_
 #define GAMEOBJECT_HPP_
+
 #include <SFML/Graphics.hpp>
-#include <SFML/System/Vector2.hpp>
 
 namespace Jetpack {
 
@@ -18,17 +18,20 @@ public:
     virtual ~GameObject() = default;
 
     virtual void update(float dt);
-    void draw(sf::RenderWindow& window) const;
+    virtual void draw(sf::RenderWindow& window, float offsetX) const;
     void move(float x, float y);
 
-    protected:
-        sf::Sprite _sprite;
-        sf::Vector2u _textureSize;
-        int _width;
-        int _frames;
-        int _currentFrame = 0;
-        float _animTimer = 0.0f;
-        float _frameRate = 0.1f;
+protected:
+    sf::Sprite _sprite;
+    sf::Vector2u _textureSize;
+    int _width;
+    int _frames;
+    sf::Vector2f _initialPos;
+    int _currentFrame = 0;
+    float _animTimer = 0.0f;
+    float _frameRate = 0.1f;
 };
-}
-#endif
+
+} // namespace Jetpack
+
+#endif /* GAMEOBJECT_HPP_ */
