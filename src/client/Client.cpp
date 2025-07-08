@@ -39,14 +39,6 @@ Jetpack::Client::~Client()
     }
 }
 
-void Jetpack::Client::disconnect()
-{
-    try {
-        Jetpack::IO::closeSocket(_socket);
-    } catch (...) {}
-    _state = ClientState::Disconnected;
-}
-
 /******************************************************************************/
 /*                                                                            */
 /*                          Connection                                        */
@@ -73,22 +65,18 @@ void Jetpack::Client::handshakeWithServer()
 
 void Jetpack::Client::waitForGameStart()
 {
-    try {
-        while (_state == ClientState::Waiting) {
-            Jetpack::Packet start = Jetpack::ProtocolUtils::receivePacket(_socket);
+    while (1) {
+        Jetpack::Packet start = Jetpack::ProtocolUtils::receivePacket(this->_socket);
 
-            if (start.type == GAME_START) {
-                this->_state = ClientState::Connected;
-                Jetpack::Utils::consoleLog("All players are ready. Game is starting!", Jetpack::LogInfo::SUCCESS);
-                break;
-            } else if (start.type == WAITING_PLAYERS_COUNT)
-                _sharedState->setNumberClients(_sharedState->getNumberClients() + 1);
-            else if (start.type == MAP_TRANSFER)
-                handleMap(start);
-        }
-    } catch (...) {
-        disconnect();
+        if (start.type == GAME_START)
+            break;
+        else if (start.type == WAITING_PLAYERS_COUNT)
+            this->_sharedState->setNumberClients(this->_sharedState->getNumberClients() + 1);
+        else if (start.type == MAP_TRANSFER)
+            this->handleMap(start);
     }
+    this->_state = ClientState::Connected;
+    Jetpack::Utils::consoleLog("All players are ready. Game is starting!", Jetpack::LogInfo::SUCCESS);
 }
 
 /******************************************************************************/
