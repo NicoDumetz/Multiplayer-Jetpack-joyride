@@ -84,6 +84,5 @@ namespace Jetpack {
                 {MAP_TRANSFER, [this](const Packet &paquet) {this->handleMap(paquet);}}
             };
             std::shared_ptr<SharedGameState> _sharedState;
-            bool _ACKPlayerAction;
     };
 }

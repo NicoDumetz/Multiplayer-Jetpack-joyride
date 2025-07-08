@@ -305,10 +305,10 @@ void Jetpack::Server::handlePlayerAction(int fd, const Jetpack::Packet& paquet)
             break;
         }
     }
-    std::vector<uint8_t> ackPayload = {PLAYER_ACTION};
-    Jetpack::ProtocolUtils::sendPacket(fd, ACTION_ACK, ackPayload, this->_debug);
-    if (this->_debug)
-        Jetpack::Utils::consoleLog("Sent ACTION_ACK to fd " + std::to_string(fd), Jetpack::LogInfo::INFO);
+    // std::vector<uint8_t> ackPayload = {PLAYER_ACTION};
+    // Jetpack::ProtocolUtils::sendPacket(fd, ACTION_ACK, ackPayload, this->_debug);
+    // if (this->_debug)
+    //     Jetpack::Utils::consoleLog("Sent ACTION_ACK to fd " + std::to_string(fd), Jetpack::LogInfo::INFO);
     
 }
 
@@ -409,7 +409,6 @@ void Jetpack::Server::startGameLoop()
             gameRunning = false;
             break;
         }
-        this->sendGameState();
         gameRunning = this->isGameStillRunning();
     }
     this->handleGameOver();
@@ -444,6 +443,7 @@ void Jetpack::Server::processPlayers(int mapHeight, int mapWidth)
         player.setHasJumped(false);
         if (player.getTileX() >= mapWidth) {
             player.setAlive(false);
+            this->sendGameState();
             continue;
         }
         this->checkCollisions(player);
@@ -479,6 +479,7 @@ void Jetpack::Server::checkCollisions(PlayerState &player)
                 }
             } else if (tile == TileType::ZAPPER) {
                 player.setAlive(false);
+                this->sendGameState();
                 return;
             }
         }
