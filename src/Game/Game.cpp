@@ -363,20 +363,12 @@ void Jetpack::Game::initScoreDisplay()
             SCORE_MARGIN_LEFT + 10, 
             SCORE_MARGIN_TOP + 5 + i * 25
         );
-        sf::Color textColor;
-        if (i == 0) 
-            textColor = sf::Color(50, 200, 50);
-        else if (i == 1)
-            textColor = sf::Color(200, 50, 50);
-        else 
-            textColor = sf::Color(50, 50, 200);
+        scoreText.setFillColor(sf::Color::White);
         
-        scoreText.setFillColor(textColor);
-        scoreText.setString("J" + std::to_string(i) + ": 0");
+        scoreText.setString("Joueur " + std::to_string(i) + ": 0");
         _scoreTexts.push_back(scoreText);
     }
 }
-
 
 void Jetpack::Game::renderScoreDisplay()
 {
@@ -385,10 +377,15 @@ void Jetpack::Game::renderScoreDisplay()
     for (int i = 0; i < std::min(static_cast<int>(_scoreTexts.size()), static_cast<int>(this->_client->getExpectedPlayerCount())); ++i) {
         auto playerState = _sharedState->getPlayerState(i);
         
-        _scoreTexts[i].setString("J" + std::to_string(i) + ": " + 
+        _scoreTexts[i].setString("Joueur " + std::to_string(i) + " : " + 
                                 std::to_string(playerState.getCoins()));
         
-        sf::Color color = _scoreTexts[i].getFillColor();
+        sf::Color color;
+        if (i == _client->getPlayerId()) {
+            color = sf::Color::Yellow;
+        } else {
+            color = sf::Color::White;
+        }
         color.a = playerState.isAlive() ? 255 : 128;
         _scoreTexts[i].setFillColor(color);
         
