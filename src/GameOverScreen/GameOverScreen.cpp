@@ -89,11 +89,11 @@ void Jetpack::GameOverScreen::setupUI(uint8_t winnerId)
     _instructionText.setOrigin(instructionBounds.width / 2.f, instructionBounds.height / 2.f);
     _instructionText.setPosition(_window.getSize().x / 2.f, _window.getSize().y / 6.f);
 
-    _textBackground.setSize(sf::Vector2f(_window.getSize().x * 0.9f, 250.f));
+    float backgroundHeight = 250.f + (this->_numberClients - 1) * 40.f;
+    _textBackground.setSize(sf::Vector2f(_window.getSize().x * 0.9f, backgroundHeight));
     _textBackground.setFillColor(sf::Color(0, 0, 0, 180));
-    _textBackground.setOrigin(_textBackground.getSize().x / 2.f, _textBackground.getSize().y / 2.f);
-    _textBackground.setPosition(_window.getSize().x / 2.f, _window.getSize().y / 2.f);
-
+    _textBackground.setOrigin(_textBackground.getSize().x / 2.f, 0.f);
+    _textBackground.setPosition(_window.getSize().x / 2.f, _window.getSize().y / 2.f - backgroundHeight / 2.f);
     setupFinalScores();
 }
 
