@@ -25,6 +25,13 @@
 /// ZAPPER ///
 #define ZAPPER_FRAME 4
 #define ZAPPER_FRAME_RATE 0.08f
+
+/// SCORE DISPLAY ///
+#define SCORE_MARGIN_TOP 10
+#define SCORE_MARGIN_LEFT 10
+#define SCORE_SPACING 25
+#define SCORE_FONT_SIZE 18
+
 namespace Jetpack {
     class Game {
       public:
@@ -51,6 +58,7 @@ namespace Jetpack {
         void initObjectsFromMap();
         void updateObjects(float dt);
         void renderObjects();
+        void renderScoreDisplay();
 
     private:
         std::shared_ptr<Jetpack::Client> _client;
@@ -71,6 +79,10 @@ namespace Jetpack {
         float _scrollOffset = 0.0f;
         float _tileSize = TILE_SIZE;
         const float BACKGROUND_ZOOM = 1.25f;
+        void updateCoinsVisibility();
+        sf::RectangleShape _scoreBackground;
+        std::vector<sf::Text> _scoreTexts;
+        sf::Sprite _coinIcon;
     };
 }
 

@@ -66,6 +66,7 @@ void Jetpack::Game::run()
         updateAnimation();
         updatePlayerPositions();
         updateObjects(deltaTime);
+        updateCoinsVisibility(); // Add this line to update coin visibility
         if (_window.hasFocus() && sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
             _client->sendJump();
         _window.clear();
@@ -235,4 +236,21 @@ void Jetpack::Game::renderObjects()
         coin.draw(_window, offsetX);
     for (auto& zapper : _zappers)
         zapper.draw(_window, offsetX);
+}
+
+
+void Jetpack::Game::updateCoinsVisibility()
+{
+    uint8_t clientPlayerId = _client->getPlayerId();
+    const auto& collectedCoins = _sharedState->getPlayerState(clientPlayerId).getCoinCollected();
+    
+    for (auto& coin : _coins) {
+        auto [x, y] = coin.getTilePosition();
+        std::pair<int, int> coinPos(x, y);
+        bool isCollected = std::find(collectedCoins.begin(), collectedCoins.end(), coinPos) != collectedCoins.end();
+        
+        if (isCollected) {
+            coin.setTransparent(true);
+        }
+    }
 }
