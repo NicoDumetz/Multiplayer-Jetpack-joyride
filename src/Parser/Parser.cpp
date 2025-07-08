@@ -23,9 +23,7 @@ Jetpack::Parser::Parser(int ac, char **av, Mode mode)
             if (value < 2 || value > NUMBER_CLIENTS_MAX)
                 throw ParserError("Player count must be between 2 and " + NUMBER_CLIENTS_MAX );
             this->_expectedPlayers = value;
-        } else if (!Jetpack::String::strcmp(av[i], "-d"))
-            this->_debug = true;
-        else
+        } else
             throw ParserError("Invalid or missing arguments");
     }
     if (_port == 0 || (this->_mode == Jetpack::Mode::CLIENT && this->_ip.empty()) || (this->_mode == Jetpack::Mode::SERVER && filename.empty()))

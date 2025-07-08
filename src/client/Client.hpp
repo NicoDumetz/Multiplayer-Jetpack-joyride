@@ -41,7 +41,7 @@ namespace Jetpack {
                     ~ClientError() = default;
             };
         public:
-            Client(const Jetpack::Parser &args, bool debug);
+            Client(const Jetpack::Parser &args);
             ~Client();
 
             void run();
@@ -70,7 +70,6 @@ namespace Jetpack {
             int _socket;
             ClientState _state;
             uint8_t _playerId;
-            bool _debug;
             uint8_t _numberClients = 0;
             uint8_t _gameOverWinnerId = 0;
             std::vector<std::vector<TileType>> _map;
