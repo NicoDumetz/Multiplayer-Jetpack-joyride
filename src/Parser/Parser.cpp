@@ -52,10 +52,8 @@ void Jetpack::Parser::loadMapContent(std::string &filename)
         if (c == '\n')
             lineCount++;
     }
-
     if (!this->_map.empty() && this->_map.back() != '\n')
         lineCount++;
-
-    if (lineCount > MAX_LINES)
-        throw ParserError("Map file exceeds maximum number of lines: " + std::to_string(MAX_LINES));
+    if (lineCount != MAX_LINES)
+        throw ParserError("a map must be 10 lines high");
 }
