@@ -65,6 +65,20 @@
 #define TILE_SIZE               ((WINDOW_HEIGHT - TILE_MARGIN * 2) / TILE_ROWS) // Size of one tile (square)
 #define MAX_LINES              10      // Maximum number of Lines on the map
 
+/// COIN ///
+#define COIN_FRAME             6
+#define COIN_FRAME_RATE        0.1f
+
+/// ZAPPER ///
+#define ZAPPER_FRAME           4
+#define ZAPPER_FRAME_RATE      0.08f
+
+/// SCORE DISPLAY ///
+#define SCORE_MARGIN_TOP       22
+#define SCORE_MARGIN_LEFT      10
+#define SCORE_SPACING          2
+#define SCORE_FONT_SIZE        30
+
 /******************************************************************************/
 /*                                                                            */
 /*                                 PLAYER                                     */

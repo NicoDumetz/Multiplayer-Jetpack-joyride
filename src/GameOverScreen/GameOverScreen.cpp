@@ -113,7 +113,7 @@ void Jetpack::GameOverScreen::setupFinalScores()
         auto playerState = _sharedState->getPlayerState(i);
         std::string scoreStr = "J" + std::to_string(i) + ": " + std::to_string(playerState.getCoins()) + " pieces";
         scoreText.setString(scoreStr);
-        sf::Color textColor = i == this->_currentPlayerId ? textColor = sf::Color::Yellow : sf::Color::White;
+        sf::Color textColor = i == this->_currentPlayerId ? sf::Color::Yellow : sf::Color::White;
         scoreText.setFillColor(textColor);
         sf::FloatRect scoreBounds = scoreText.getLocalBounds();
         scoreText.setOrigin(scoreBounds.width / 2.f, scoreBounds.height / 2.f);
