@@ -33,7 +33,7 @@ namespace Jetpack {
 
     class Server {
     public:
-        Server(int port, std::string map, int expectedPlayers, bool debug);
+        Server(int port, std::string map);
         ~Server();
 
         class ServerError : public Jetpack::Error {
@@ -61,15 +61,11 @@ namespace Jetpack {
         void processPlayers(int mapHeight, int mapWidth);
         void checkCollisions(PlayerState &player);
         bool isGameStillRunning();
-        int findPlayerIndexByFd(int fd) const;
         void handleGameOver();
-        int countAlivePlayers() const;
 
     private:
         int _port;
         int _serverSocket;
-        int _numberClients;
-        bool _debug;
         std::vector<std::vector<TileType>> _map;
         std::vector<std::unique_ptr<Jetpack::RemoteClient>> _clients;
         std::map<uint8_t, std::function<void(int, const Jetpack::Packet&)>> _packetHandlers = {

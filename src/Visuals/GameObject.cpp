@@ -38,34 +38,12 @@ void Jetpack::GameObject::draw(sf::RenderWindow& window, float offsetX) const
     this->_pos = _initialPos;
     this->_pos.x += offsetX;
     spriteCopy.setPosition(this->_pos);
-
-    if (_transparent) {
-        sf::Color color = spriteCopy.getColor();
-        color.a = 128;
-        spriteCopy.setColor(color);
-    }
-
     window.draw(spriteCopy);
 }
 
 void GameObject::move(float x, float y)
 {
     _sprite.move(x, y);
-}
-
-void GameObject::setTransparent(bool transparent)
-{
-    _transparent = transparent;
-}
-
-bool GameObject::isTransparent() const
-{
-    return _transparent;
-}
-
-sf::Vector2f GameObject::getPosition() const
-{
-    return _initialPos;
 }
 
 } // namespace Jetpack

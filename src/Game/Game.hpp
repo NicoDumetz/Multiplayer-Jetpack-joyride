@@ -17,8 +17,6 @@
 #include "Visuals/Zapper/Zapper.hpp"
 #include "client/Client.hpp"
 #include "Error/Error.hpp"
-#include "GameOverScreen/GameOverScreen.hpp"
-#include "GameWaitingRoom/WaitingRoom.hpp"
 
 /// COIN ///
 #define COIN_FRAME 6
@@ -27,13 +25,6 @@
 /// ZAPPER ///
 #define ZAPPER_FRAME 4
 #define ZAPPER_FRAME_RATE 0.08f
-
-/// SCORE DISPLAY ///
-#define SCORE_MARGIN_TOP 10
-#define SCORE_MARGIN_LEFT 10
-#define SCORE_SPACING 25
-#define SCORE_FONT_SIZE 18
-
 namespace Jetpack {
     class Game {
       public:
@@ -49,6 +40,8 @@ namespace Jetpack {
         void waitingRoom();
 
       private:
+        struct animState;
+
         void initGraphics();
         void updateMapScroll(float dt);
         void updateAnimation();
@@ -56,19 +49,30 @@ namespace Jetpack {
         void renderPlayers();
         void drawGrid();
         void drawBackground();
-        int getPlayerAnimationRow(int playerId, float playerY) const;
+        int getPlayerAnimationRow(Jetpack::PlayerState& playerState, animState& state);
         void initObjectsFromMap();
         void updateObjects(float dt);
         void renderObjects();
-        void renderScoreDisplay();
-        void initScoreDisplay();
-        void updateCoinsVisibility();
-        void playMusic(const std::string& filename, float volume = 100.f);
-        void playSound(const std::string& name, float volume = 100.f);
-        void showGameOverScreen(uint8_t winnerId);
-        static bool isStoppedSound(const sf::Sound& sound);
 
-      private:
+        enum class state {
+            WALK = 0,
+            FLY,
+            LAND,
+            ELECTROCUTE,
+            BURN,
+            SPIN,
+            NONE
+        };
+
+        struct animState {
+            state _state = Game::state::WALK;
+            int frame = 0;
+            float clock = 0.f;
+            float slow = 0.f;
+            int loop = 2;
+        };
+
+    private:
         std::shared_ptr<Jetpack::Client> _client;
         sf::RenderWindow _window;
         std::shared_ptr<SharedGameState> _sharedState;
@@ -77,6 +81,7 @@ namespace Jetpack {
         sf::Sprite _mapSprite;
         sf::Texture _playerSpriteSheet;
         std::vector<sf::Sprite> _playerSprites;
+        std::vector<animState> _playerAnimState;
         sf::Clock _animationClock;
         std::vector<Jetpack::Coin> _coins;
         std::vector<Jetpack::Zapper> _zappers;
@@ -87,14 +92,6 @@ namespace Jetpack {
         float _scrollOffset = 0.0f;
         float _tileSize = TILE_SIZE;
         const float BACKGROUND_ZOOM = 1.25f;
-        sf::RectangleShape _scoreBackground;
-        std::vector<sf::Text> _scoreTexts;
-        sf::Sprite _coinIcon;
-        sf::Music music;
-        std::map<std::string, sf::SoundBuffer> soundBuffers;
-        std::vector<sf::Sound> sounds;
-        std::unique_ptr<GameOverScreen> _gameOverScreen;
-        std::unique_ptr<WaitingRoom> _waitingRoom;
     };
 }
 

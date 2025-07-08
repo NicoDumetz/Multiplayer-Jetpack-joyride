@@ -17,7 +17,7 @@ int main(int ac, char **av, char **env)
     try {
         Jetpack::Parser args(ac, av, Jetpack::Mode::CLIENT);
         Jetpack::Utils::checkDisplay(env);
-        auto client = std::make_shared<Jetpack::Client>(args, args.isDebug());
+        auto client = std::make_shared<Jetpack::Client>(args);
         client->handshakeWithServer();
         Jetpack::Game game(client);
         std::thread waitThread([&client]() {
@@ -25,22 +25,23 @@ int main(int ac, char **av, char **env)
         });
         game.waitingRoom();
         waitThread.join();
-        if (client->getState() == Jetpack::ClientState::Disconnected) {
-            Jetpack::Utils::consoleLog("Client disconnected.", Jetpack::LogInfo::INFO);
-            return 84;
-        }
-        std::thread runThread([&client]() {
+        std::thread waitThread_run([&client]() {
             client->run();
         });
         game.run();
-        runThread.join();
+        waitThread_run.join();
     } catch (const Jetpack::Parser::ParserError &e) {
         Jetpack::Utils::printUsageClient();
         Jetpack::Utils::consoleLog(e.what(), Jetpack::LogInfo::ERROR);
         return 84;
+    } catch (const Jetpack::Game::GameError &e) {
+        Jetpack::Utils::consoleLog("Game exited: " + std::string(e.what()), Jetpack::LogInfo::ERROR);
+        return 84;
+
     } catch (const Jetpack::Error &e) {
         Jetpack::Utils::consoleLog(e.what(), Jetpack::LogInfo::ERROR);
         return 84;
+
     }
     return 0;
 }

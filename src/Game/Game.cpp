@@ -6,8 +6,13 @@
 */
 
 #include "Game/Game.hpp"
+#include "PlayerState/PlayerState.hpp"
 #include "Utils/Utils.hpp"
+#include <SFML/Window/WindowStyle.hpp>
 #include <cmath>
+#include <cstddef>
+#include <cstdlib>
+#include <iostream>
 
 Jetpack::Game::Game(std::shared_ptr<Jetpack::Client> client)
     : _client(client),
@@ -16,6 +21,7 @@ Jetpack::Game::Game(std::shared_ptr<Jetpack::Client> client)
 {
     _window.setFramerateLimit(60);
     initGraphics();
+    std::srand(std::time(nullptr));
 }
 
 Jetpack::Game::~Game() {}
@@ -38,41 +44,28 @@ void Jetpack::Game::initGraphics()
     _mapSprite.setScale(baseScale * BACKGROUND_ZOOM, baseScale * BACKGROUND_ZOOM);
     if (!_playerSpriteSheet.loadFromFile("assets/player.png"))
         throw GameError("Failed to load player sprite sheet");
-    for (int i = 0; i < this->_client->getExpectedPlayerCount(); ++i) {
+    for (int i = 0; i < NUMBER_CLIENTS; ++i) {
         sf::Sprite sprite;
         sprite.setTexture(_playerSpriteSheet);
         sprite.setTextureRect({0, 0, PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT});
         sprite.setScale(PLAYER_SCALE, PLAYER_SCALE);
         sprite.setOrigin(PLAYER_SPRITE_WIDTH * PLAYER_ORIGIN_X, PLAYER_SPRITE_HEIGHT * PLAYER_ORIGIN_Y);
         _playerSprites.push_back(sprite);
+        _playerAnimState.emplace_back();
     }
     _animationClock.restart();
-    initScoreDisplay();
 }
-
 void Jetpack::Game::run()
 {
     sf::Event event;
     sf::Clock clock;
     float deltaTime;
 
-    playMusic("theme", 50.f);
-    while (_window.isOpen()) {
-        if (_client->getState() == Jetpack::ClientState::GameOver) {
-            music.stop();
-            showGameOverScreen(_client->getGameOverWinnerId());
-            break;
-        }
-        if (_client->getState() != Jetpack::ClientState::Connected) {
-            break;
-        }
+    while (_window.isOpen() && _client->getState() == Jetpack::ClientState::Connected) {
         while (_window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) {
                 _window.close();
-                this->_client->disconnect();
-            } else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
-                _window.close();
-                this->_client->disconnect();
+                throw GameError("Window closed by user");
             }
         }
         deltaTime = clock.restart().asSeconds();
@@ -80,7 +73,6 @@ void Jetpack::Game::run()
         updateAnimation();
         updatePlayerPositions();
         updateObjects(deltaTime);
-        updateCoinsVisibility();
         if (_window.hasFocus() && sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
             _client->sendJump();
         _window.clear();
@@ -88,30 +80,28 @@ void Jetpack::Game::run()
         drawGrid();
         renderObjects();
         renderPlayers();
-        renderScoreDisplay();
         _window.display();
     }
 }
 
 void Jetpack::Game::waitingRoom()
 {
-    if (!_waitingRoom) {
-        _waitingRoom = std::make_unique<WaitingRoom>(_window, _font, _sharedState, _client, _playerSpriteSheet);
-    }
-    
-    _waitingRoom->run();
-}
+    sf::Text text("Waiting for players...", _font, 60);
+    text.setFillColor(sf::Color::White);
+    sf::FloatRect bounds = text.getLocalBounds();
+    text.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
+    text.setPosition(WINDOW_WIDTH / 2.f, WINDOW_HEIGHT / 2.f);
 
-void Jetpack::Game::showGameOverScreen(uint8_t winnerId)
-{
-    if (!_gameOverScreen) {
-        _gameOverScreen = std::make_unique<GameOverScreen>(_window, _font, _sharedState, this->_client->getExpectedPlayerCount());
-        _gameOverScreen->_soundCallback = [this](const std::string& name, float volume) {
-            this->playSound(name, volume);
-        };
+    while (_window.isOpen() && _client->getState() == Jetpack::ClientState::Waiting) {
+        sf::Event event;
+        while (_window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed)
+                _window.close();
+        }
+        _window.clear();
+        _window.draw(text);
+        _window.display();
     }
-    
-    _gameOverScreen->run(winnerId);
 }
 
 void Jetpack::Game::updateMapScroll(float dt)
@@ -121,25 +111,78 @@ void Jetpack::Game::updateMapScroll(float dt)
 
 void Jetpack::Game::updateAnimation()
 {
-    if (_animationClock.getElapsedTime().asSeconds() < _frameTime)
-        return;
-    _currentFrame = (_currentFrame + 1) % 4;
-    for (std::size_t i = 0; i < _playerSprites.size(); ++i) {
-        auto state = _sharedState->getPlayerState(i);
-        int row = getPlayerAnimationRow(i, state.getY());
-        _playerSprites[i].setTextureRect(sf::IntRect(_currentFrame * PLAYER_SPRITE_WIDTH, row * PLAYER_SPRITE_HEIGHT, PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT));
-    }
+    float time = _animationClock.getElapsedTime().asSeconds();
+    bool changes = false;
 
-    _animationClock.restart();
+    for (std::size_t i = 0; i < _playerSprites.size(); ++i) {
+        this->_playerAnimState[i].clock += time;
+        if (this->_playerAnimState[i].clock < _frameTime + this->_playerAnimState[i].slow
+            || this->_playerAnimState[i]._state == state::NONE)
+            continue;
+        this->_playerAnimState[i].clock -= _frameTime + this->_playerAnimState[i].slow;
+        this->_playerAnimState[i].frame = (this->_playerAnimState[i].frame + 1) % 4;
+        auto& state = _sharedState->getPlayerState(i);
+        int row = getPlayerAnimationRow(state, this->_playerAnimState[i]);
+        _playerSprites[i].setTextureRect(sf::IntRect(this->_playerAnimState[i].frame * PLAYER_SPRITE_WIDTH, row * PLAYER_SPRITE_HEIGHT, PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT));
+        changes = true;
+    }
+    if (changes)
+        _animationClock.restart();
 }
 
-int Jetpack::Game::getPlayerAnimationRow(int id, float y) const
+
+int Jetpack::Game::getPlayerAnimationRow(Jetpack::PlayerState& playerState, animState& state)
 {
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space) && _client->getPlayerId() == id)
-        return 1;
-    if (y < TILE_ROWS - 2)
-        return 1;
-    return 0;
+    bool isOnGround = playerState.getY() >= TILE_ROWS - 2;
+
+    if (state._state == state::SPIN || state._state == state::BURN || state._state == state::ELECTROCUTE) {
+        if (state.frame != 0)
+            return static_cast<int>(state._state);
+        if (state.loop == 0) {
+            state._state = state::NONE;
+            return static_cast<int>(Game::state::NONE);
+        }
+        --state.loop;
+        return static_cast<int>(state._state);
+    }
+
+    if (!playerState.isAlive() && isOnGround) {
+        state.frame = 0;
+        state._state = state::SPIN;
+        return static_cast<int>(Game::state::SPIN);
+    }
+
+    if (!playerState.isAlive()) {
+        state.frame = 0;
+        state._state = (rand() % 2) ? Game::state::ELECTROCUTE : Game::state::BURN;
+        return static_cast<int>(state._state);
+    }
+
+    if (state._state == state::FLY || state._state == state::WALK)
+        state.slow = 0.f;
+
+    if (!isOnGround) {
+        state._state = state::FLY;
+        return static_cast<int>(Game::state::FLY);
+    }
+
+    if (isOnGround && state._state == state::FLY) {
+        state.frame = 0;
+        state.slow = 0.15;
+        state._state = Game::state::LAND;
+        return static_cast<int>(state::LAND);
+    }
+
+    if (isOnGround && state._state == state::LAND && state.frame == 0) {
+        state._state = state::WALK;
+        return static_cast<int>(state::WALK);
+    }
+
+    if (isOnGround && state._state == state::LAND)
+        return static_cast<int>(state::LAND);
+
+    state._state = state::WALK;
+    return static_cast<int>(state::WALK);
 }
 
 void Jetpack::Game::updatePlayerPositions()
@@ -169,7 +212,7 @@ void Jetpack::Game::renderPlayers()
         return;
     for (std::size_t i = 0; i < _playerSprites.size(); ++i) {
         auto state = _sharedState->getPlayerState(i);
-        if (!state.isAlive()) continue;
+        if (!state.isAlive() && this->_playerAnimState[i]._state == state::NONE) continue;
         if (_client->getPlayerId() == i)
             _playerSprites[i].setColor(sf::Color::White);
         else
@@ -207,18 +250,11 @@ void Jetpack::Game::drawBackground()
     float baseScale = WINDOW_HEIGHT / static_cast<float>(_mapTexture.getSize().y);
     float finalScale = baseScale * BACKGROUND_ZOOM;
     _mapSprite.setScale(finalScale, finalScale);
-    
-    float mapWidth = _mapTexture.getSize().x * finalScale;
     float mapHeight = _mapTexture.getSize().y * finalScale;
     float y = (WINDOW_HEIGHT - mapHeight) / 2.0f;
-    
-    float effectiveScrollOffset = std::fmod(_scrollOffset, mapWidth);
-    
-    for (int i = -1; i < 2; i++) {
-        float x = -effectiveScrollOffset + (i * mapWidth);
-        _mapSprite.setPosition(x, y);
-        _window.draw(_mapSprite);
-    }
+    float x = -_scrollOffset;
+    _mapSprite.setPosition(x, y);
+    _window.draw(_mapSprite);
 }
 
 void Jetpack::Game::initObjectsFromMap()
@@ -260,123 +296,3 @@ void Jetpack::Game::renderObjects()
     for (auto& zapper : _zappers)
         zapper.draw(_window, offsetX);
 }
-
-
-void Jetpack::Game::updateCoinsVisibility()
-{
-    uint8_t clientPlayerId = _client->getPlayerId();
-    const auto& collectedCoins = _sharedState->getPlayerState(clientPlayerId).getCoinCollected();
-    
-    for (auto& coin : _coins) {
-        auto [x, y] = coin.getTilePosition();
-        std::pair<int, int> coinPos(x, y);
-        bool isCollected = std::find(collectedCoins.begin(), collectedCoins.end(), coinPos) != collectedCoins.end();
-        
-        if (isCollected) {
-            coin.setTransparent(true);
-        }
-    }
-}
-
-void Jetpack::Game::initScoreDisplay()
-{
-    _scoreBackground.setSize(sf::Vector2f(120, 10 + this->_client->getExpectedPlayerCount() * 25));
-    _scoreBackground.setFillColor(sf::Color(0, 0, 0, 150));
-    _scoreBackground.setPosition(SCORE_MARGIN_LEFT, SCORE_MARGIN_TOP);
-
-    _scoreTexts.clear();
-    for (int i = 0; i < this->_client->getExpectedPlayerCount(); ++i) {
-        sf::Text scoreText;
-        scoreText.setFont(_font);
-        scoreText.setCharacterSize(SCORE_FONT_SIZE);
-        scoreText.setPosition(
-            SCORE_MARGIN_LEFT + 10, 
-            SCORE_MARGIN_TOP + 5 + i * 25
-        );
-        sf::Color textColor;
-        if (i == 0) 
-            textColor = sf::Color(50, 200, 50);
-        else if (i == 1)
-            textColor = sf::Color(200, 50, 50);
-        else 
-            textColor = sf::Color(50, 50, 200);
-        
-        scoreText.setFillColor(textColor);
-        scoreText.setString("J" + std::to_string(i) + ": 0");
-        _scoreTexts.push_back(scoreText);
-    }
-}
-
-
-void Jetpack::Game::renderScoreDisplay()
-{
-    _window.draw(_scoreBackground);
-
-    for (int i = 0; i < std::min(static_cast<int>(_scoreTexts.size()), static_cast<int>(this->_client->getExpectedPlayerCount())); ++i) {
-        auto playerState = _sharedState->getPlayerState(i);
-        
-        _scoreTexts[i].setString("J" + std::to_string(i) + ": " + 
-                                std::to_string(playerState.getCoins()));
-        
-        sf::Color color = _scoreTexts[i].getFillColor();
-        color.a = playerState.isAlive() ? 255 : 128;
-        _scoreTexts[i].setFillColor(color);
-        
-        _window.draw(_scoreTexts[i]);
-    }
-}
-
-void Jetpack::Game::playMusic(const std::string& filename, float volume)
-{
-    std::string filepath = "assets/" + filename + ".ogg";
-    std::ifstream fileCheck(filepath);
-    if (!fileCheck) {
-        return;
-    }
-    fileCheck.close();
-    
-    if (!music.openFromFile(filepath)) {
-        Jetpack::Utils::consoleLog("Failed to load music: " + filename, Jetpack::LogInfo::ERROR);
-        return;
-    }
-    
-    music.setLoop(true);
-    music.setVolume(volume);
-    music.play();
-}
-
-void Jetpack::Game::playSound(const std::string& name, float volume)
-{
-    std::string filepath = "assets/" + name + ".ogg";
-    std::ifstream fileCheck(filepath);
-    if (!fileCheck) {
-        return;
-    }
-    fileCheck.close();
-    
-    auto it = soundBuffers.find(name);
-    
-    if (it == soundBuffers.end()) {
-        sf::SoundBuffer buffer;
-        if (!buffer.loadFromFile(filepath)) {
-            Jetpack::Utils::consoleLog("Failed to load sound: " + name, Jetpack::LogInfo::ERROR);
-            return;
-        }
-        it = soundBuffers.insert(std::make_pair(name, buffer)).first;
-    }
-
-    sounds.erase(
-        std::remove_if(sounds.begin(), sounds.end(), Jetpack::Game::isStoppedSound),
-        sounds.end()
-    );
-    
-    sounds.emplace_back(it->second);
-    sounds.back().setVolume(volume);
-    sounds.back().play();
-}
-
-bool Jetpack::Game::isStoppedSound(const sf::Sound& sound)
-{
-    return sound.getStatus() == sf::Sound::Stopped;
-}
-

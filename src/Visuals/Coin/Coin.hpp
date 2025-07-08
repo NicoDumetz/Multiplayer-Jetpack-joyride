@@ -19,7 +19,6 @@ public:
     ~Coin() = default;
 
     void update(float dt) override;
-    std::pair<int, int> getTilePosition() const;
 };
 
 } // namespace Jetpack
