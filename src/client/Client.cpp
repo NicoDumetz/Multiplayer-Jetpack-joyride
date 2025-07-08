@@ -56,8 +56,8 @@ void Jetpack::Client::disconnect()
 
 void Jetpack::Client::handshakeWithServer()
 {
-    Jetpack::ProtocolUtils::sendPacket(this->_socket, LOGIN_REQUEST, {});
-    Jetpack::Packet login = Jetpack::ProtocolUtils::receivePacket(this->_socket);
+    Jetpack::ProtocolUtils::sendPacket(this->_socket, LOGIN_REQUEST, {}, this->_debug);
+    Jetpack::Packet login = Jetpack::ProtocolUtils::receivePacket(this->_socket, this->_debug);
     Jetpack::Packet map;
 
     if (_debug)
@@ -71,7 +71,7 @@ void Jetpack::Client::handshakeWithServer()
     this->_sharedState->initPlayers(this->_numberClients);
     Jetpack::Utils::consoleLog("Login accepted by server, has ID " + std::to_string(this->_playerId), Jetpack::LogInfo::INFO);
     Jetpack::Utils::consoleLog("Waiting for " + std::to_string(this->_numberClients) + " players to be ready.", Jetpack::LogInfo::INFO);
-    map = Jetpack::ProtocolUtils::receivePacket(this->_socket);
+    map = Jetpack::ProtocolUtils::receivePacket(this->_socket, this->_debug);
     if (_debug)
         Jetpack::Utils::consoleLog("Received MAP_TRANSFER from server", Jetpack::LogInfo::INFO);
     if (map.type != MAP_TRANSFER)
@@ -84,7 +84,7 @@ void Jetpack::Client::waitForGameStart()
 {
     try {
         while (_state == ClientState::Waiting) {
-            Jetpack::Packet start = Jetpack::ProtocolUtils::receivePacket(_socket);
+            Jetpack::Packet start = Jetpack::ProtocolUtils::receivePacket(_socket, this->_debug);
             if (_debug)
                 Jetpack::Utils::consoleLog("Received packet type " + std::to_string(start.type), Jetpack::LogInfo::INFO);
             if (start.type == GAME_START) {
@@ -116,7 +116,7 @@ void Jetpack::Client::run()
 {
     try {
         while (this->_state == ClientState::Connected) {
-            Jetpack::Packet paquet = Jetpack::ProtocolUtils::receivePacket(this->_socket);
+            Jetpack::Packet paquet = Jetpack::ProtocolUtils::receivePacket(this->_socket, this->_debug);
 
             auto it = this->_packetHandlers.find(paquet.type);
             if (it != this->_packetHandlers.end())
@@ -214,7 +214,7 @@ void Jetpack::Client::sendJump()
     this->_ACKPlayerAction = false;
     if (_debug)
         Jetpack::Utils::consoleLog("Sending PLAYER_ACTION (JUMP) to server", Jetpack::LogInfo::INFO);
-    Jetpack::ProtocolUtils::sendPacket(this->_socket, PLAYER_ACTION, payload);
+    Jetpack::ProtocolUtils::sendPacket(this->_socket, PLAYER_ACTION, payload, this->_debug);
     auto startTime = std::chrono::steady_clock::now();
     auto timeout = std::chrono::seconds(2);
     while (!this->_ACKPlayerAction && std::chrono::steady_clock::now() - startTime < timeout);
