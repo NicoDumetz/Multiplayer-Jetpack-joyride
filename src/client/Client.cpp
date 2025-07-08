@@ -169,16 +169,9 @@ void Jetpack::Client::handleGameOver(const Jetpack::Packet &paquet)
 {
     if (paquet.payload.empty())
         return;
-    uint8_t winner = paquet.payload[0];
-
-    if (winner == 255)
-        Jetpack::Utils::consoleLog("Game over: It's a tie!", Jetpack::LogInfo::SUCCESS);
-    else if (winner == this->_playerId)
-        Jetpack::Utils::consoleLog("Game over: You win!", Jetpack::LogInfo::SUCCESS);
-    else
-        Jetpack::Utils::consoleLog("Game over: Player " + std::to_string(winner) + " wins", Jetpack::LogInfo::SUCCESS);
-    this->_state = ClientState::Disconnected;
-    this->_sharedState->setGameOver(true);
+    uint8_t winnerId = paquet.payload[0];
+    this->_state = Jetpack::ClientState::GameOver;
+    this->_gameOverWinnerId = winnerId;
 }
 
 void Jetpack::Client::handleActionAck(const Jetpack::Packet& paquet)
