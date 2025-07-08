@@ -17,21 +17,16 @@ namespace Jetpack {
 
     class SharedGameState {
         public:
-            SharedGameState() = default;
-            ~SharedGameState() = default;
-
-            void initPlayers(int numberClients)
-            {
-                std::lock_guard<std::mutex> lock(this->_mutex);
-                this->_players.resize(numberClients);
-                for (int i = 0; i < numberClients; i++) {
+            SharedGameState() {
+                this->_players.resize(NUMBER_CLIENTS);
+                for (int i = 0; i < NUMBER_CLIENTS; i++) {
                     this->_players[i] = PlayerState(i, -1);
                     this->_players[i].setX(0.f);
                     this->_players[i].setY(0.f);
                     this->_players[i].setAlive(true);
                 }
-                this->_numberClients = numberClients;
             }
+            ~SharedGameState() = default;
 
             void updatePlayerPosition(uint8_t id, float x, float y)
             {
@@ -66,7 +61,7 @@ namespace Jetpack {
                 std::lock_guard<std::mutex> lock(this->_mutex);
 
                 if (id >= this->_players.size())
-                    throw Jetpack::Error("Invalid player ID in SharedGameState");
+                    this->_players.resize(id + 1);
                 this->_players[id].setX(x);
                 this->_players[id].setY(y);
                 this->_players[id].setAlive(alive);

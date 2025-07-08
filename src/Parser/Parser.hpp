@@ -38,7 +38,6 @@ namespace Jetpack {
             inline int getPort() const {return this->_port;}
             inline const std::string &getMap() const {return this->_map;}
             inline const std::string &getIp() const {return this->_ip;}
-            inline int getExpectedPlayers() const {return this->_expectedPlayers;}
 
         private:
             Mode _mode;
@@ -46,6 +45,5 @@ namespace Jetpack {
             std::string _map;
             std::string _ip;
             bool _isClient;
-            int _expectedPlayers = NUMBER_CLIENTS_DEFAULT;
     };
 }
