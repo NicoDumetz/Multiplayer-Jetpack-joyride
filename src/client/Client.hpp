@@ -81,7 +81,8 @@ namespace Jetpack {
                 {PLAYER_ELIMINATED, [this](const Packet &paquet) {this->handlePlayerEliminated(paquet);}},
                 {GAME_OVER, [this](const Packet &paquet) {this->handleGameOver(paquet);}},
                 {ACTION_ACK, [this](const Packet &paquet) {this->handleActionAck(paquet);}},
-                {MAP_TRANSFER, [this](const Packet &paquet) {this->handleMap(paquet);}}
+                {MAP_TRANSFER, [this](const Packet &paquet) {this->handleMap(paquet);}},
+                {WAITING_PLAYERS_COUNT, [](const Packet&) {}},
             };
             std::shared_ptr<SharedGameState> _sharedState;
     };

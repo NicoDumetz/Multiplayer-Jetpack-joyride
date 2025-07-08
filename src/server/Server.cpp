@@ -106,6 +106,12 @@ void Jetpack::Server::removeClient(int index)
 {
     Jetpack::Utils::consoleLog("Client disconnected.", Jetpack::LogInfo::INFO);
     this->_clients.erase(this->_clients.begin() + index);
+    uint8_t waitingPlayers = static_cast<uint8_t>(this->countReadyClients());
+    for (const auto& client : this->_clients) {
+        Jetpack::ProtocolUtils::sendPacket(client->getSocket(), WAITING_PLAYERS_COUNT, {waitingPlayers}, this->_debug);
+        if (this->_debug)
+            Jetpack::Utils::consoleLog("Updated WAITING_PLAYERS_COUNT to " + std::to_string(waitingPlayers), Jetpack::LogInfo::INFO);
+    }
 }
 
 /******************************************************************************/
