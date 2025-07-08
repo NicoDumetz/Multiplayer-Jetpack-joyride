@@ -13,6 +13,45 @@ The exact protocol design, including all packet types, message formats, and comm
 📄 `doc.txt`
 
 This file outlines how the server and client exchange information throughout the game lifecycle, from login to game over.
+## 🗺️ Creating Your Own Map
+
+To customize the game, you can easily create your own map by editing a plain `.txt` file using specific characters. The map is a grid of characters where each character represents a tile or game element.
+
+#### Supported Tiles
+
+| Character | Meaning              |
+|-----------|----------------------|
+| `_`       | Empty space          |
+| `c`       | Coin                 |
+| `e`       | Zapper (Obstacle)    |
+| `\n`      | New line (row break) |
+
+#### Example
+
+Here is a basic map layout:
+
+```txt
+____________________________e__________________________________________________________________
+____________________________e_____ccccccc________________________eeeeeeeeeeee__________________
+____________________________e____cc____________________________________________________________
+____________________________e___cc______e_________________________cccc_________________________
+_______________________________cc_______e_________________________cccc_________________________
+_________________________ccccccc________e______________________________________________________
+_________________________cccccc_________e_________________eeeeeeeeeeeee________________________
+________________________________________e______________________________________________________
+________________________________________e______________________________________________________
+_______________________________________________________________________________________________
+```
+
+- The player starts at the **bottom-left**.
+- Each new line defines a new **row** in the map from **top to bottom**.
+
+#### Rules
+
+- You can have **up to 10 rowq** (vertical height).
+- All rows should ideally have the **same length** (horizontal width) for better display.
+- The map must end with a newline `\n` (empty line at the end of the file).
+- Only the characters `_`, `c`, `e`, and `\n` are allowed. Any other character will cause a parsing error.
 
 
 ## How to Run
