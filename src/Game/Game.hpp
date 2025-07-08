@@ -13,11 +13,20 @@
 #include <algorithm>
 #include <fstream>
 #include <memory>
+#include "Visuals/Coin/Coin.hpp"
+#include "Visuals/Zapper/Zapper.hpp"
 #include "client/Client.hpp"
 #include "Error/Error.hpp"
 #define WINDOW_HEIGHT 600
 #define WINDOW_WIDTH 800
 
+/// COIN ///
+#define COIN_FRAME 6
+#define COIN_FRAME_RATE 0.1f
+
+/// ZAPPER ///
+#define ZAPPER_FRAME 4
+#define ZAPPER_FRAME_RATE 0.08f
 #define SPRITE_SHEET_WIDTH 538  // the total width of the sprite sheet
 #define SPRITE_SHEET_HEIGHT 803 // the total height of the sprite sheet
 #define PLAYER_SCALE 0.5f // Player scale factor (resize the player sprites)
@@ -29,7 +38,6 @@
 #define ANIMATION_FRAME_TIME 0.1f // Time between each animation frame for the player sprite
 #define TILE_SIZE (WINDOW_HEIGHT / 9.0f) // Size of one tile in the game (based on the screen height, divided by 9 for the tile grid)
 #define SCROLL_SPEED_GAME 100.0f // Speed of the scrolling background
-
 
 namespace Jetpack
 {
@@ -58,6 +66,10 @@ namespace Jetpack
             sf::Texture _mapTexture;
             sf::Sprite _mapSprite;
             sf::Texture _playerSpriteSheet;
+            sf::Texture _coinTexture;
+            sf::Texture _zapperTexture;
+            std::vector<Coin> _coins;
+            std::vector<Zapper> _zappers;
             std::vector<sf::Sprite> _playerSprites;
             std::vector<sf::IntRect> _playerTextureRects;
             sf::Clock _animationClock;
@@ -67,6 +79,8 @@ namespace Jetpack
             float _mapWidth;
             float _tileSize;
 
+            void initVisuals();
+            void updateVisuals(float dt);
             void updatePlayerPositions();
             void renderPlayers();
             int getPlayerAnimationRow(int playerId, float playerY) const;

@@ -5,6 +5,8 @@
 ** Client
 */
 #include "client/Client.hpp"
+#include "Utils/Utils.hpp"
+#include <cstddef>
 
 
 /******************************************************************************/

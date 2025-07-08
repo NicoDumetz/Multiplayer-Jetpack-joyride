@@ -18,7 +18,7 @@
 #include "SocketAddress/SocketAddress.hpp"
 #include "Protocole/Protocole.hpp"
 #include "GameShared/GameShared.hpp"
-
+#include "Visuals/Coin/Coin.hpp"
 
 /******************************************************************************/
 /*                                                                            */
@@ -59,6 +59,7 @@ namespace Jetpack {
             inline std::shared_ptr<SharedGameState> getSharedState() const {return this->_sharedState;}
             void sendJump();
             void handleActionAck(const Jetpack::Packet &paquet);
+            inline const std::vector<std::vector<TileType>>& getMap() const {return this->_map;}
             void handleMap(const Jetpack::Packet &paquet);
 
         private:
