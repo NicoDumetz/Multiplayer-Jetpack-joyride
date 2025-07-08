@@ -20,6 +20,9 @@ public:
     virtual void update(float dt);
     virtual void draw(sf::RenderWindow& window, float offsetX) const;
     void move(float x, float y);
+    void setTransparent(bool transparent);
+    bool isTransparent() const;
+    sf::Vector2f getPosition() const;
 
 protected:
     sf::Sprite _sprite;
@@ -30,6 +33,7 @@ protected:
     int _currentFrame = 0;
     float _animTimer = 0.0f;
     float _frameRate = 0.1f;
+    bool _transparent = false;
 };
 
 } // namespace Jetpack
