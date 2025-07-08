@@ -196,6 +196,7 @@ void Jetpack::WaitingRoom::handleEvents()
             _client->disconnect();
             _window.close();
         } else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+            _client->disconnect();
             _window.close();
         }
     }
