@@ -56,6 +56,7 @@
 #define TILE_ROWS               10      // Number of vertical tiles in the grid
 #define TILE_MARGIN             50      // Margin (top and bottom) around the grid
 #define TILE_SIZE               ((WINDOW_HEIGHT - TILE_MARGIN * 2) / TILE_ROWS) // Size of one tile (square)
+#define MAX_LINES              10      // Maximum number of Lines on the map
 
 /******************************************************************************/
 /*                                                                            */

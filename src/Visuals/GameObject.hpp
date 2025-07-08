@@ -9,7 +9,6 @@
 #define GAMEOBJECT_HPP_
 
 #include <SFML/Graphics.hpp>
-#include <SFML/System/Vector2.hpp>
 
 namespace Jetpack {
 
@@ -28,7 +27,6 @@ protected:
     int _width;
     int _frames;
     sf::Vector2f _initialPos;
-    mutable sf::Vector2f _pos;
     int _currentFrame = 0;
     float _animTimer = 0.0f;
     float _frameRate = 0.1f;
