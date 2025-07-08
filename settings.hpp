@@ -40,6 +40,10 @@
 #define JETPACK_JUMP_SPEED      6.0f    // Jump boost when pressing space, tiles per second
 #define TICK_INTERVAL           (1.0f / TICK_RATE) // Duration of a single simulation tick
 #define JUMP_DELTA_Y            1.0f    // Jump delta Y (not always used)
+#define COLLISION_MARGIN_LEFT    0.50f
+#define COLLISION_MARGIN_RIGHT   0.30f
+#define COLLISION_MARGIN_TOP     0.01f
+#define COLLISION_MARGIN_BOTTOM  0.10f
 
 /******************************************************************************/
 /*                                                                            */

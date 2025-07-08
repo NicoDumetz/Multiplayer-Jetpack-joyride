@@ -403,16 +403,30 @@ void Jetpack::Server::processPlayers(int mapHeight, int mapWidth)
 
 void Jetpack::Server::checkCollisions(PlayerState &player)
 {
-    TileType tile = player.map[player.getTileY()][player.getTileX()];
+    int tileXLeft = static_cast<int>(std::floor(player.getX() + COLLISION_MARGIN_LEFT));
+    int tileXRight = static_cast<int>(std::floor(player.getX() + 1.0f - COLLISION_MARGIN_RIGHT));
+    int tileYTop = static_cast<int>(std::floor(player.getY() + COLLISION_MARGIN_TOP));
+    int tileYBottom = static_cast<int>(std::floor(player.getY() + 1.0f - COLLISION_MARGIN_BOTTOM));
 
-    if (tile == TileType::COIN) {
-        player.map[player.getTileY()][player.getTileX()] = TileType::EMPTY;
-        player.addCoin();
-        sendCoinEvent(player.getId(), player.getCurrentX(), player.getCurrentY());
-        this->sendMap(player.getId(), player.map);
-    } else if (tile == TileType::ZAPPER)
-        player.setAlive(false);
+    for (int y = tileYTop; y <= tileYBottom; ++y) {
+        for (int x = tileXLeft; x <= tileXRight; ++x) {
+            if (y < 0 || y >= static_cast<int>(player.map.size()) ||
+                x < 0 || x >= static_cast<int>(player.map[0].size()))
+                continue;
+            TileType tile = player.map[y][x];
+            if (tile == TileType::COIN) {
+                player.map[y][x] = TileType::EMPTY;
+                player.addCoin();
+                sendCoinEvent(player.getId(), x, y);
+                this->sendMap(player.getId(), player.map);
+            } else if (tile == TileType::ZAPPER) {
+                player.setAlive(false);
+                return;
+            }
+        }
+    }
 }
+
 
 bool Jetpack::Server::isGameStillRunning()
 {
