@@ -63,6 +63,7 @@ namespace Jetpack {
         bool isGameStillRunning();
         int findPlayerIndexByFd(int fd) const;
         void handleGameOver();
+        int countAlivePlayers() const;
 
     private:
         int _port;

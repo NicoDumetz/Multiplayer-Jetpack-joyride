@@ -386,6 +386,7 @@ void Jetpack::Server::sendMap(int playerId, const std::vector<std::vector<TileTy
 /*                               GAME                                         */
 /*                                                                            */
 /******************************************************************************/
+
 void Jetpack::Server::startGameLoop()
 {
     auto lastTime = std::chrono::steady_clock::now();
@@ -404,10 +405,24 @@ void Jetpack::Server::startGameLoop()
             accumulator -= TICK_INTERVAL;
             this->processPlayers(mapHeight, mapWidth);
         }
+        if (this->countAlivePlayers() <= 1) {
+            gameRunning = false;
+            break;
+        }
         this->sendGameState();
         gameRunning = this->isGameStillRunning();
     }
     this->handleGameOver();
+}
+
+int Jetpack::Server::countAlivePlayers() const
+{
+    int count = 0;
+    for (const auto &player : this->_playerStates) {
+        if (player.isAlive())
+            count++;
+    }
+    return count;
 }
 
 void Jetpack::Server::processNetworkEvents()
@@ -481,10 +496,16 @@ void Jetpack::Server::handleGameOver()
     uint8_t winnerId = INVALID_ID;
     int bestScore = -1;
     bool tie = false;
+    int aliveCount = 0;
+    int lastAliveId = INVALID_ID;
 
     if (this->_debug)
         Jetpack::Utils::consoleLog("Computing GAME_OVER winner...", Jetpack::LogInfo::INFO);
     for (const auto &player : this->_playerStates) {
+        if (player.isAlive()) {
+            aliveCount++;
+            lastAliveId = player.getId();
+        }
         if (this->_debug)
             Jetpack::Utils::consoleLog("Player " + std::to_string(player.getId()) +
                 " has " + std::to_string(player.getCoins()) + " coins.", Jetpack::LogInfo::INFO);
@@ -496,12 +517,18 @@ void Jetpack::Server::handleGameOver()
             tie = true;
         }
     }
-    if (tie) {
+    if (aliveCount == 1) {
+        winnerId = lastAliveId;
+        if (this->_debug)
+            Jetpack::Utils::consoleLog("Only one player alive: Player " + std::to_string(winnerId), Jetpack::LogInfo::INFO);
+    } else if (tie) {
         winnerId = 255;
         if (this->_debug)
             Jetpack::Utils::consoleLog("It's a tie. No unique winner.", Jetpack::LogInfo::INFO);
-    } else if (this->_debug)
-        Jetpack::Utils::consoleLog("Winner is player " + std::to_string(winnerId), Jetpack::LogInfo::INFO);
+    } else {
+        if (this->_debug)
+            Jetpack::Utils::consoleLog("Winner is player " + std::to_string(winnerId), Jetpack::LogInfo::INFO);
+    }
     std::vector<uint8_t> payload = {winnerId};
     for (const auto &client : _clients) {
         Jetpack::ProtocolUtils::sendPacket(client->getSocket(), GAME_OVER, payload, this->_debug);
