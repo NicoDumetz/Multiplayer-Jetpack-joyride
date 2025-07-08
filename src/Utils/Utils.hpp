@@ -49,7 +49,7 @@
 #define INVALID_ID 255
 #define JETPACK_JUMP_SPEED 6.0f // tiles/second
 #define TICK_INTERVAL (1.0f / 60.0f) // seconds
-
+#define FRAGMENT_SIZE 1024U // size max of paquet
 
 namespace Jetpack {
     enum class TileType {

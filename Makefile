@@ -15,10 +15,7 @@ SRC_COMMON = src/server/Server.cpp \
 SRC_SERVER = src/main_server.cpp $(SRC_COMMON)
 
 SRC_CLIENT = src/main_client.cpp \
-			 src/Game/Game.cpp $(SRC_COMMON) \
-			 src/Visuals/GameObject.cpp \
-			 src/Visuals/Coin/Coin.cpp \
-			 src/Visuals/Zapper/Zapper.cpp
+			 src/Game/Game.cpp $(SRC_COMMON)
 
 OBJ_SERVER = $(SRC_SERVER:.cpp=.o)
 OBJ_CLIENT = $(SRC_CLIENT:.cpp=.o)
