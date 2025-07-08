@@ -16,14 +16,20 @@
 #include "Network/Network.hpp"
 #include "IO/IO.hpp"
 #include "Utils/Utils.hpp"
-#include "client/Client.hpp"
+#include "RemoteClient/remoteClient.hpp"
 #include "Error/Error.hpp"
+#include <functional>
 #include "SocketAddress/SocketAddress.hpp"
 #define NUMBER_CLIENTS 2
 
 
+/******************************************************************************/
+/*                                                                            */
+/*                               SERVER SIDE                                  */
+/*                                                                            */
+/******************************************************************************/
+
 namespace Jetpack {
-    class Client;
     class Server {
     public:
         Server(int port);
@@ -44,10 +50,19 @@ namespace Jetpack {
         void handleClientActivity(std::vector<struct pollfd> &pollFds);
         int getPort() const {return this->_port;}
         int getSocket() const {return this->_serverSocket;}
+        int findClientIndexByFd(int fd) const;
 
     private:
         int _port;
         int _serverSocket;
-        std::vector<std::unique_ptr<Jetpack::Client>> _clients;
+        std::vector<std::unique_ptr<Jetpack::RemoteClient>> _clients;
+        std::map<uint8_t, std::function<void(int, const Jetpack::Packet&)>> _packetHandlers = {
+            {0x01, [this](int fd, const Jetpack::Packet& pkt) {return this->handleLogin(fd, pkt);}},
+            {0x05, [this](int fd, const Jetpack::Packet& pkt) {return this->handlePlayerAction(fd, pkt);}},
+            {0x09, [this](int fd, const Jetpack::Packet& pkt) {return this->handleGameOver(fd, pkt);}}
+        };
+        void handleLogin(int fd, const Jetpack::Packet& pkt);
+        void handlePlayerAction(int fd, const Jetpack::Packet& pkt);
+        void handleGameOver(int fd, const Jetpack::Packet& pkt);
     };
 }

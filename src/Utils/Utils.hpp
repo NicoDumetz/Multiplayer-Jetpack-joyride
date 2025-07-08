@@ -22,6 +22,12 @@
 #define FTP_SMALL_BUFFER 256
 #define FTP_PATH_BUFFER 512
 namespace Jetpack {
+
+    struct Packet {
+        uint8_t type;
+        std::vector<uint8_t> payload;
+    };
+
     enum class LogInfo {
         INFO,
         ERROR,
@@ -85,6 +91,13 @@ namespace Jetpack {
         static void printUsageClient()
         {
             std::cerr << "Usage: ./jetpack_client -h <ip> -p <port> [-d]" << std::endl;
+        }
+
+        static std::string toHex(uint8_t value)
+        {
+            std::ostringstream oss;
+            oss << std::hex << std::uppercase << std::setfill('0') << std::setw(2) << static_cast<int>(value);
+            return oss.str();
         }
 
     };

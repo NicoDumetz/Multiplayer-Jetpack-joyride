@@ -9,7 +9,8 @@
 SRC_COMMON = src/server/Server.cpp \
 			 src/client/Client.cpp \
 			 src/Utils/Utils.cpp \
-			 src/Parser/Parser.cpp
+			 src/Parser/Parser.cpp \
+			 src/Protocole/Protocole.cpp
 
 SRC_SERVER = src/main_server.cpp $(SRC_COMMON)
 SRC_CLIENT = src/main_client.cpp $(SRC_COMMON)

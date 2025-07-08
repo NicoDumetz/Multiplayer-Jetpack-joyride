@@ -14,24 +14,47 @@
 #include "Utils/Utils.hpp"
 #include "Parser/Parser.hpp"
 #include "Network/Network.hpp"
+#include <functional>
 #include "SocketAddress/SocketAddress.hpp"
+#include "Protocole/Protocole.hpp"
+
+
+/******************************************************************************/
+/*                                                                            */
+/*                               CLIENT SIDE                                  */
+/*                                                                            */
+/******************************************************************************/
 
 namespace Jetpack {
-
     class Client {
         public:
-            Client(int socket) : _socket(socket), _connected(true) {};
+            class ClientError : public Jetpack::Error {
+                public:
+                    ClientError(const std::string &message) : Jetpack::Error(message) {}
+                    ~ClientError() = default;
+            };
+        public:
             Client(const Jetpack::Parser &args);
             ~Client();
 
-            int getSocket() const {return this->_socket;}
-            std::string receiveMessage();
-            void sendMessage(const std::string &message);
             void run();
+            int getSocket() const {return this->_socket;}
+            void connectToServer();
 
         private:
             int _socket;
             bool _connected;
             std::string _buffer;
+            std::map<uint8_t, std::function<void(const Packet&)>> _packetHandlers = {
+                {0x06, [this](const Packet& paquet) {this->handleGameState(paquet);}},
+                {0x07, [this](const Packet& paquet) {this->handleCoinEvent(paquet);}},
+                {0x08, [this](const Packet& paquet) {this->handlePlayerEliminated(paquet);}},
+                {0x09, [this](const Packet& paquet) {this->handleGameOver(paquet);}}
+            };
+
+            void handleGameState(const Jetpack::Packet &paquet);
+            void handleCoinEvent(const Jetpack::Packet &paquet);
+            void handlePlayerEliminated(const Jetpack::Packet &paquet);
+            void handleGameOver(const Jetpack::Packet &paquet);
     };
 }

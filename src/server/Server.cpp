@@ -68,19 +68,8 @@ void Jetpack::Server::acceptClient()
     Jetpack::SocketAddress clientAddr;
     int socket = Jetpack::Network::accept(this->_serverSocket, clientAddr.raw(), clientAddr.lenPtr());
 
-    pid_t pid = Jetpack::Process::fork();
-    if (pid == 0) {
-        Jetpack::IO::close(this->_serverSocket); // on ferme sinon reste ouvert sur 2 process
-        Jetpack::Client client(socket);
-        client.run();
-        Jetpack::IO::close(socket);
-        exit(0);
-    } else if (pid > 0) {
-        Jetpack::IO::close(socket);
-        Jetpack::Utils::consoleLog("Forked client process " + std::to_string(pid), Jetpack::LogInfo::INFO);
-    } else {
-        throw ServerError("Fork failed");
-    }
+    this->_clients.push_back(std::make_unique<Jetpack::RemoteClient>(socket));
+    Jetpack::Utils::consoleLog("New Client (fd = " + std::to_string(socket) + ")", Jetpack::LogInfo::SUCCESS);
 }
 
 
@@ -121,17 +110,26 @@ void Jetpack::Server::handleNewClient(std::vector<struct pollfd> &pollFds)
 void Jetpack::Server::handleClientActivity(std::vector<struct pollfd> &pollFds)
 {
     size_t clientIndex;
-    std::string msg;
+    int client_fd;
 
-    for (size_t i = 1; i < pollFds.size(); i++) {
+    for (size_t i = 1; i < pollFds.size(); ++i) {
         clientIndex = i - 1;
-        if (clientIndex >= this->_clients.size())
+        if (clientIndex >= this->_clients.size() || !(pollFds[i].revents & POLLIN))
             continue;
-        msg = this->_clients[clientIndex]->receiveMessage();
-        if (msg.empty())
+        client_fd = this->_clients[clientIndex]->getSocket();
+        try {
+            Jetpack::Packet paquet = Jetpack::ProtocolUtils::receivePacket(client_fd);
+            auto it = this->_packetHandlers.find(paquet.type);
+            if (it != this->_packetHandlers.end()) {
+                it->second(client_fd, paquet);
+            } else {
+                Jetpack::Utils::consoleLog("unknown Paquet", Jetpack::LogInfo::ERROR);
+            }
+        } catch (const std::exception &e) {
+            Jetpack::Utils::consoleLog("Client disconnected (" + std::string(e.what()) + ")", Jetpack::LogInfo::ERROR);
             this->removeClient(clientIndex);
-        else
-            Jetpack::Utils::consoleLog("Client says: " + msg, Jetpack::LogInfo::INFO);
+            break;
+        }
     }
 }
 
@@ -159,4 +157,43 @@ void Jetpack::Server::run()
         this->handleNewClient(pollFds);
         this->handleClientActivity(pollFds);
     }
+}
+
+/******************************************************************************/
+/*                                                                            */
+/*                               IN WORKING                                   */
+/*                                                                            */
+/******************************************************************************/
+
+int Jetpack::Server::findClientIndexByFd(int fd) const
+{
+    for (size_t i = 0; i < this->_clients.size(); i++)
+        if (this->_clients[i]->getSocket() == fd)
+            return static_cast<int>(i);
+    return -1;
+}
+
+
+void Jetpack::Server::handleLogin(int fd, const Jetpack::Packet&)
+{
+    int index = this->findClientIndexByFd(fd);
+    uint8_t id;
+
+    if (index == -1)
+        return;
+    id = static_cast<uint8_t>(index);
+    this->_clients[index]->setId(id);
+    this->_clients[index]->setReady(true);
+    Jetpack::ProtocolUtils::sendPacket(fd, 0x02, {id});
+    Jetpack::Utils::consoleLog("Client " + std::to_string(fd) + " ID " + std::to_string(id), Jetpack::LogInfo::SUCCESS);
+}
+
+void Jetpack::Server::handlePlayerAction(int, const Jetpack::Packet&)
+{
+    return;
+}
+
+void Jetpack::Server::handleGameOver(int, const Jetpack::Packet&)
+{
+    return;
 }
