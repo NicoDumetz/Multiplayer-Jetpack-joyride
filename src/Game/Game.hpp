@@ -18,6 +18,18 @@
 #define WINDOW_HEIGHT 600
 #define WINDOW_WIDTH 800
 
+#define SPRITE_SHEET_WIDTH 538  // the total width of the sprite sheet
+#define SPRITE_SHEET_HEIGHT 803 // the total height of the sprite sheet
+#define PLAYER_SCALE 0.5f // Player scale factor (resize the player sprites)
+#define PLAYER_ORIGIN_X 0.5f // The origin point of the player sprite (centered in the middle of the sprite)
+#define PLAYER_ORIGIN_Y 0.5f // The origin point of the player sprite (centered in the middle of the sprite)
+#define PLAYER_SPRITE_WIDTH (SPRITE_SHEET_WIDTH / 4)  // Dividing the total width by the number of columns (4)
+#define PLAYER_SPRITE_HEIGHT (SPRITE_SHEET_HEIGHT / 6) // Dividing the total height by the number of rows (6)
+#define FIXED_PLAYER_X (WINDOW_WIDTH / 4.0f) // Fixed position for all players on the X axis, placed at 1/4 of the screen width
+#define ANIMATION_FRAME_TIME 0.1f // Time between each animation frame for the player sprite
+#define TILE_SIZE (WINDOW_HEIGHT / 9.0f) // Size of one tile in the game (based on the screen height, divided by 9 for the tile grid)
+#define SCROLL_SPEED_GAME 100.0f // Speed of the scrolling background
+
 
 namespace Jetpack
 {
@@ -27,6 +39,7 @@ namespace Jetpack
                 public:
                     GameError(const std::string &message) : Jetpack::Error(message) {}
             };
+
         public:
             Game(std::shared_ptr<Jetpack::Client> client);
             ~Game();
@@ -45,15 +58,15 @@ namespace Jetpack
             sf::Texture _mapTexture;
             sf::Sprite _mapSprite;
             sf::Texture _playerSpriteSheet;
-            sf::Sprite _playerSprite1;
-            sf::Sprite _playerSprite2;
+            std::vector<sf::Sprite> _playerSprites;
+            std::vector<sf::IntRect> _playerTextureRects;
             sf::Clock _animationClock;
             int _currentFrame;
             float _frameTime;
             float _scrollX;
             float _mapWidth;
             float _tileSize;
-            
+
             void updatePlayerPositions();
             void renderPlayers();
             int getPlayerAnimationRow(int playerId, float playerY) const;
