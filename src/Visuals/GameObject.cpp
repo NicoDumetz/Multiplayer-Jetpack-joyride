@@ -11,7 +11,7 @@
 namespace Jetpack {
 
 GameObject::GameObject(const sf::Texture& texture, float x, float y, float tileSize, int frames)
-    : _sprite(texture), _frames(frames), _initialPos(x * tileSize, TILE_MARGIN + y * tileSize), _pos(_initialPos)
+    : _sprite(texture), _frames(frames), _initialPos(x * tileSize, TILE_MARGIN + y * tileSize)
 {
     _textureSize = texture.getSize();
     _width = _textureSize.x / frames;
@@ -35,10 +35,18 @@ void GameObject::update(float dt)
 void Jetpack::GameObject::draw(sf::RenderWindow& window, float offsetX) const
 {
     sf::Sprite spriteCopy = _sprite;
-    this->_pos = _initialPos;
-    this->_pos.x += offsetX;
-    spriteCopy.setPosition(this->_pos);
+    sf::Vector2f finalPos = _initialPos;
+    finalPos.x += offsetX;
+    spriteCopy.setPosition(finalPos);
+    
+    if (_transparent) {
+        sf::Color color = spriteCopy.getColor();
+        color.a = 128;
+        spriteCopy.setColor(color);
+    }
+    
     window.draw(spriteCopy);
+
 }
 
 void GameObject::move(float x, float y)
