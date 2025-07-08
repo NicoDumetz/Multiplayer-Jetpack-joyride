@@ -61,7 +61,6 @@ namespace Jetpack {
         void processPlayers(int mapHeight, int mapWidth);
         void checkCollisions(PlayerState &player);
         bool isGameStillRunning();
-        int findPlayerIndexByFd(int fd) const;
         void handleGameOver();
 
     private:

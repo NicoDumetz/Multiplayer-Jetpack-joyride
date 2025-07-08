@@ -61,7 +61,6 @@ namespace Jetpack {
             void handleActionAck(const Jetpack::Packet &paquet);
             inline const std::vector<std::vector<TileType>>& getMap() const {return this->_map;}
             void handleMap(const Jetpack::Packet &paquet);
-            void disconnect();
 
         private:
             int _socket;
