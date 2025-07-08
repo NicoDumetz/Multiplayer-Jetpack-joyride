@@ -23,17 +23,15 @@ void Jetpack::WaitingRoom::run()
 {
     initBackground();
     setupUI();
-    setupPlayers();
 
     sf::Clock animClock;
 
     while (_window.isOpen() && _client->getState() == Jetpack::ClientState::Waiting) {
         handleEvents();
         float deltaTime = animClock.restart().asSeconds();
-        if (_animatedPlayers.size() < _client->getExpectedPlayerCount()) {
-            setupPlayers();
-        }
-
+        size_t currentConnected = static_cast<size_t>(_sharedState->getNumberClients());
+        if (_animatedPlayers.size() != currentConnected)
+            setupPlayers(currentConnected);
         updateUI(deltaTime);
         updatePlayers(deltaTime);
         render();
@@ -85,7 +83,7 @@ void Jetpack::WaitingRoom::setupUI()
 
 }
 
-void Jetpack::WaitingRoom::setupPlayers()
+void Jetpack::WaitingRoom::setupPlayers(int count)
 {
     _animatedPlayers.clear();
 
@@ -95,9 +93,7 @@ void Jetpack::WaitingRoom::setupPlayers()
     std::uniform_real_distribution<float> posDist(50.0f, _window.getSize().x - 50.0f);
     std::uniform_real_distribution<float> heightDist(_window.getSize().y * 0.7f, _window.getSize().y - 80.0f);
 
-    int numPlayers = _client->getExpectedPlayerCount();
-
-    for (int i = 0; i < numPlayers; ++i) {
+    for (int i = 0; i < count; ++i) {
         AnimatedPlayer player;
         player.sprite.setTexture(_playerTexture);
         player.sprite.setTextureRect({0, 0, PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT});
@@ -112,9 +108,9 @@ void Jetpack::WaitingRoom::setupPlayers()
         player.currentFrame = i % 4;
         player.animTimer = 0.0f;
 
-        if (!player.movingRight) {
+        if (!player.movingRight)
             player.sprite.setScale(-scale, scale);
-        }
+
         player.sprite.setPosition(player.posX, player.posY);
         _animatedPlayers.push_back(player);
     }

@@ -40,7 +40,8 @@ class WaitingRoom {
         void updateUI(float deltaTime);
         void render();
         void handleEvents();
-        void setupPlayers();
+        void setupPlayers(int count);
+
         void updatePlayers(float deltaTime);
         void renderPlayers();
         void initBackground();
