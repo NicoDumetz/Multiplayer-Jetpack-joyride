@@ -84,10 +84,15 @@ void Jetpack::GameOverScreen::setupUI(uint8_t winnerId)
     _instructionText.setString("Appuyez sur [Escape] pour quitter");
     _instructionText.setFont(_font);
     _instructionText.setCharacterSize(24);
-    _instructionText.setFillColor(sf::Color(200, 200, 200));
+    _instructionText.setFillColor(sf::Color(0, 0, 0));
     sf::FloatRect instructionBounds = _instructionText.getLocalBounds();
     _instructionText.setOrigin(instructionBounds.width / 2.f, instructionBounds.height / 2.f);
     _instructionText.setPosition(_window.getSize().x / 2.f, _window.getSize().y / 6.f);
+
+    _textBackground.setSize(sf::Vector2f(_window.getSize().x * 0.9f, 250.f));
+    _textBackground.setFillColor(sf::Color(0, 0, 0, 180));
+    _textBackground.setOrigin(_textBackground.getSize().x / 2.f, _textBackground.getSize().y / 2.f);
+    _textBackground.setPosition(_window.getSize().x / 2.f, _window.getSize().y / 2.f);
 
     setupFinalScores();
 }
@@ -145,6 +150,7 @@ void Jetpack::GameOverScreen::render()
     _window.clear();
 
     _window.draw(_backgroundSprite);
+    _window.draw(_textBackground);
     _window.draw(_gameOverText);
     _window.draw(_winnerText);
     

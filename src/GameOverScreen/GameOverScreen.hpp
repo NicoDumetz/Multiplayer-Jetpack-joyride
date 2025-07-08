@@ -43,6 +43,8 @@ class GameOverScreen {
         std::vector<sf::Text> _finalScores;
         sf::Texture _backgroundTexture;
         sf::Sprite _backgroundSprite;
+        sf::RectangleShape _textBackground;
+
         
         sf::Clock _animClock;
         bool _fadeOut;
