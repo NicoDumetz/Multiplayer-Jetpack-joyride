@@ -180,7 +180,8 @@ void Jetpack::WaitingRoom::updatePlayers(float deltaTime)
                 player.sprite.setScale(scale, scale);
             }
         }
-        player.sprite.setPosition(player.posX, player.posY);
+        float oscillation = std::sin(player.animTimer * 3.0f + player.posX * 0.05f) * 10.0f;
+        player.sprite.setPosition(player.posX, player.posY + oscillation);
     }
 }
 
