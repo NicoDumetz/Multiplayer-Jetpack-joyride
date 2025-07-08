@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** B-NWP-400-LIL-4-1-jetpack-nicolas.dumetz
+** File description:
+** Game
+*/
+
 #include "Game/Game.hpp"
 #include "Utils/Utils.hpp"
 #include <cmath>
