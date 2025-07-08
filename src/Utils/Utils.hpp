@@ -109,7 +109,7 @@ namespace Jetpack {
 
         static void printUsageServer()
         {
-            std::cerr << "Usage: ./jetpack_server -p <port> -m <map> [-d]" << std::endl;
+            std::cerr << "Usage: ./jetpack_server -p <port> -m <map> [-n <number>] [-d]" << std::endl;
         }
 
         static void printUsageClient()
