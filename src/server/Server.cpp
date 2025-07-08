@@ -247,8 +247,3 @@ void Jetpack::Server::handlePlayerAction(int, const Jetpack::Packet&)
 {
     return;
 }
-
-void Jetpack::Server::handleGameOver(int, const Jetpack::Packet&)
-{
-    return;
-}

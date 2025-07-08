@@ -6,6 +6,7 @@
 */
 #include "client/Client.hpp"
 
+
 /******************************************************************************/
 /*                                                                            */
 /*                               Constructor                                  */
@@ -62,7 +63,8 @@ void Jetpack::Client::connectToServer()
     login = Jetpack::ProtocolUtils::receivePacket(this->_socket);
     if (login.type != LOGIN_RESPONSE || login.payload.size() != 1)
         throw ClientError("Invalid LOGIN_RESPONSE");
-    Jetpack::Utils::consoleLog("Login accepted by server", Jetpack::LogInfo::INFO);
+    this->_playerId = login.payload[0];
+    Jetpack::Utils::consoleLog("Login accepted by server, has ID " + std::to_string(this->_playerId), Jetpack::LogInfo::INFO);
     this->_state = ClientState::Waiting;
     map = Jetpack::ProtocolUtils::receivePacket(this->_socket);
     if (map.type != MAP_TRANSFER)

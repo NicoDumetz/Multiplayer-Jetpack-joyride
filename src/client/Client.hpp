@@ -55,12 +55,13 @@ namespace Jetpack {
         private:
             int _socket;
             ClientState _state;
+            uint8_t _playerId;
             std::vector<std::vector<TileType>> _map;
             std::map<uint8_t, std::function<void(const Packet&)>> _packetHandlers = {
-                {0x06, [this](const Packet& paquet) {this->handleGameState(paquet);}},
-                {0x07, [this](const Packet& paquet) {this->handleCoinEvent(paquet);}},
-                {0x08, [this](const Packet& paquet) {this->handlePlayerEliminated(paquet);}},
-                {0x09, [this](const Packet& paquet) {this->handleGameOver(paquet);}}
+                {GAME_STATE, [this](const Packet& paquet) {this->handleGameState(paquet);}},
+                {COIN_EVENT, [this](const Packet& paquet) {this->handleCoinEvent(paquet);}},
+                {PLAYER_ELIMINATED, [this](const Packet& paquet) {this->handlePlayerEliminated(paquet);}},
+                {GAME_OVER, [this](const Packet& paquet) {this->handleGameOver(paquet);}}
             };
     };
 }
