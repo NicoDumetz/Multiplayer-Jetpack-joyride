@@ -57,18 +57,15 @@ void Jetpack::Game::run()
     float deltaTime;
 
     playMusic("theme", 50.f);
-
     while (_window.isOpen()) {
         if (_client->getState() == Jetpack::ClientState::GameOver) {
             music.stop();
             showGameOverScreen(_client->getGameOverWinnerId());
             break;
         }
-        
         if (_client->getState() != Jetpack::ClientState::Connected) {
             break;
         }
-        
         while (_window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) {
                 _window.close();
@@ -126,7 +123,7 @@ void Jetpack::Game::waitingRoom()
 void Jetpack::Game::showGameOverScreen(uint8_t winnerId)
 {
     if (!_gameOverScreen) {
-        _gameOverScreen = std::make_unique<GameOverScreen>(_window, _font, _sharedState);
+        _gameOverScreen = std::make_unique<GameOverScreen>(_window, _font, _sharedState, this->_client->getExpectedPlayerCount());
         _gameOverScreen->_soundCallback = [this](const std::string& name, float volume) {
             this->playSound(name, volume);
         };

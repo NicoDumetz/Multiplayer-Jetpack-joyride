@@ -8,8 +8,8 @@
 #include "GameOverScreen.hpp"
 #include <cmath>
 
-Jetpack::GameOverScreen::GameOverScreen(sf::RenderWindow& window, sf::Font& font, std::shared_ptr<SharedGameState> sharedState)
-    : _window(window), _font(font), _sharedState(sharedState), _fadeOut(false), _alpha(0.0f)
+Jetpack::GameOverScreen::GameOverScreen(sf::RenderWindow& window, sf::Font& font, std::shared_ptr<SharedGameState> sharedState, uint8_t numberClients)
+    : _window(window), _font(font), _sharedState(sharedState), _numberClients(numberClients), _fadeOut(false), _alpha(0.0f)
 {
 }
 
@@ -83,7 +83,7 @@ void Jetpack::GameOverScreen::setupFinalScores()
 {
     _finalScores.clear();
     
-    for (int i = 0; i < NUMBER_CLIENTS; ++i) {
+    for (int i = 0; i < this->_numberClients; ++i) {
         sf::Text scoreText;
         scoreText.setFont(_font);
         scoreText.setCharacterSize(30);
