@@ -4,12 +4,6 @@
 ** File description:
 ** settings
 */
-/*
-** EPITECH PROJECT, 2025
-** B-NWP-400-LIL-4-1-jetpack-nicolas.dumetz
-** File description:
-** settings
-*/
 
 #ifndef SETTINGS_HPP_
 #define SETTINGS_HPP_
