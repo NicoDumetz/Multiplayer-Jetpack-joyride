@@ -9,7 +9,7 @@
 #include "Network/Network.hpp"
 
 
-void Jetpack::ProtocolUtils::sendPacket(int socket, uint8_t type, const std::vector<uint8_t>& payload)
+void Jetpack::ProtocolUtils::sendPacket(int socket, uint8_t type, const std::vector<uint8_t>& payload, bool debug)
 {
     size_t totalSent = 0;
     size_t fragmentMax = FRAGMENT_SIZE;
@@ -17,6 +17,8 @@ void Jetpack::ProtocolUtils::sendPacket(int socket, uint8_t type, const std::vec
     std::vector<uint8_t> firstFragment;
     uint16_t payloadLen;
 
+    if (debug)
+        Jetpack::Utils::consoleLog("Sending packet type 0x" + Jetpack::Utils::toHex(type) + " with payload size: " + std::to_string(payload.size()), Jetpack::LogInfo::INFO);
     if (payload.empty()) {
         std::vector<uint8_t> header = { type, 0, 0 };
         Jetpack::IO::write(socket, header.data(), header.size());
@@ -36,9 +38,12 @@ void Jetpack::ProtocolUtils::sendPacket(int socket, uint8_t type, const std::vec
         Jetpack::IO::write(socket, fragment.data(), fragment.size());
         totalSent += fragmentSize;
     }
+    if (debug)
+        Jetpack::Utils::consoleLog("Packet sent in " + std::to_string((payload.size() / fragmentMax) + 1) + " fragment(s)", Jetpack::LogInfo::INFO);
 }
 
-Jetpack::Packet Jetpack::ProtocolUtils::receivePacket(int socket)
+
+Jetpack::Packet Jetpack::ProtocolUtils::receivePacket(int socket, bool debug)
 {
     Jetpack::Packet pkt;
     uint8_t header[3];
@@ -52,6 +57,8 @@ Jetpack::Packet Jetpack::ProtocolUtils::receivePacket(int socket)
         throw Jetpack::Error("Failed to read packet header");
     pkt.type = header[0];
     length = Jetpack::Network::ntohs((header[1] << 8) + header[2]);
+    if (debug)
+        Jetpack::Utils::consoleLog("Receiving packet type 0x" + Jetpack::Utils::toHex(pkt.type) + " with length: " + std::to_string(length), Jetpack::LogInfo::INFO);
     if (length > fragmentMax) {
         while (totalReceived < length) {
             fragmentSize = std::min(fragmentMax, length - totalReceived);
@@ -68,5 +75,7 @@ Jetpack::Packet Jetpack::ProtocolUtils::receivePacket(int socket)
         if (static_cast<size_t>(bytesRead) != pkt.payload.size())
             throw Jetpack::Error("Failed to read full payload");
     }
+    if (debug)
+        Jetpack::Utils::consoleLog("Packet successfully received with " + std::to_string(pkt.payload.size()) + " bytes", Jetpack::LogInfo::INFO);
     return pkt;
 }

@@ -17,7 +17,7 @@ int main(int ac, char **av, char **env)
     try {
         Jetpack::Parser args(ac, av, Jetpack::Mode::CLIENT);
         Jetpack::Utils::checkDisplay(env);
-        auto client = std::make_shared<Jetpack::Client>(args);
+        auto client = std::make_shared<Jetpack::Client>(args, args.isDebug());
         client->handshakeWithServer();
         Jetpack::Game game(client);
         std::thread waitThread([&client]() {

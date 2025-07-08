@@ -11,7 +11,7 @@
 namespace Jetpack {
     class ProtocolUtils {
         public:
-            static void sendPacket(int socket, uint8_t type, const std::vector<uint8_t>& payload);
-            static Jetpack::Packet receivePacket(int socket);
+            static void sendPacket(int socket, uint8_t type, const std::vector<uint8_t>& payload, bool debug);
+            static Jetpack::Packet receivePacket(int socket, bool debug);
     };
 }
