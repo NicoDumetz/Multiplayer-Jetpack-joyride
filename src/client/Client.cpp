@@ -17,6 +17,7 @@ Jetpack::Client::Client(const Jetpack::Parser &args)
 {
     Jetpack::SocketAddress addr;
 
+    this->_ACKPlayerAction = false;
     this->_socket = Jetpack::Network::socket(AF_INET, SOCK_STREAM, 0);
     this->_state = ClientState::Disconnected;
     auto *in = reinterpret_cast<sockaddr_in *>(addr.raw());
@@ -165,4 +166,25 @@ void Jetpack::Client::handleGameOver(const Jetpack::Packet &paquet)
         Jetpack::Utils::consoleLog("Game over: Player " + std::to_string(winner) + " wins", Jetpack::LogInfo::SUCCESS);
     this->_state = ClientState::Disconnected;
     this->_sharedState->setGameOver(true);
+}
+
+void Jetpack::Client::handleActionAck(const Jetpack::Packet& paquet)
+{
+    if (paquet.payload.size() == 1 && paquet.payload[0] == PLAYER_ACTION)
+        this->_ACKPlayerAction = true;
+}
+
+void Jetpack::Client::sendJump()
+{
+    std::vector<uint8_t> payload = {static_cast<uint8_t>(Jetpack::PlayerActionType::JUMP)};
+    this->_ACKPlayerAction = false;
+    Jetpack::ProtocolUtils::sendPacket(this->_socket, PLAYER_ACTION, payload);
+    auto startTime = std::chrono::steady_clock::now();
+    auto timeout = std::chrono::seconds(2);
+
+    while (!this->_ACKPlayerAction && std::chrono::steady_clock::now() - startTime < timeout);
+    if (this->_ACKPlayerAction)
+        this->_ACKPlayerAction = false;
+    else
+        sendJump();
 }

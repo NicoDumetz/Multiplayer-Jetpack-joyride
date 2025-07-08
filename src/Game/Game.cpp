@@ -56,7 +56,8 @@ void Jetpack::Game::run()
         //     clock.restart();
         // }
         if (this->_window.hasFocus() && sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
-            Jetpack::ProtocolUtils::sendPacket(this->_client->getSocket(), PLAYER_ACTION, {static_cast<uint8_t>(Jetpack::PlayerActionType::JUMP)});
+            // Jetpack::ProtocolUtils::sendPacket(this->_client->getSocket(), PLAYER_ACTION, {static_cast<uint8_t>(Jetpack::PlayerActionType::JUMP)});
+            this->_client->sendJump();
         }
 
         // if (_client->getSharedState()->getPlayers().size() > 1) {

@@ -36,6 +36,7 @@
 #define PLAYER_ELIMINATED 0x09
 #define GAME_OVER 0x10
 
+#define ACTION_ACK 0x0A
 
 // constants server
 #define NUMBER_CLIENTS 2

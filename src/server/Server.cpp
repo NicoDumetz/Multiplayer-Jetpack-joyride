@@ -285,6 +285,8 @@ void Jetpack::Server::handlePlayerAction(int fd, const Jetpack::Packet& paquet)
             break;
         }
     }
+    std::vector<uint8_t> ackPayload = {PLAYER_ACTION};
+    Jetpack::ProtocolUtils::sendPacket(fd, ACTION_ACK, ackPayload);
 }
 
 void Jetpack::Server::sendCoinEvent(uint8_t playerId)

@@ -58,6 +58,8 @@ namespace Jetpack {
             void handlePlayerEliminated(const Jetpack::Packet &paquet);
             void handleGameOver(const Jetpack::Packet &paquet);
             inline std::shared_ptr<SharedGameState> getSharedState() const {return this->_sharedState;}
+            void sendJump();
+            void handleActionAck(const Jetpack::Packet &paquet);
 
         private:
             int _socket;
@@ -69,8 +71,10 @@ namespace Jetpack {
                 {COIN_EVENT, [this](const Packet& paquet) {this->handleCoinEvent(paquet);}},
                 {POSITION_UPDATE, [this](const Packet& paquet) {this->handlePositionUpdate(paquet);}},
                 {PLAYER_ELIMINATED, [this](const Packet& paquet) {this->handlePlayerEliminated(paquet);}},
-                {GAME_OVER, [this](const Packet& paquet) {this->handleGameOver(paquet);}}
+                {GAME_OVER, [this](const Packet& paquet) {this->handleGameOver(paquet);}},
+                {ACTION_ACK, [this](const Packet& paquet) {this->handleActionAck(paquet);}}
             };
             std::shared_ptr<SharedGameState> _sharedState;
+            bool _ACKPlayerAction;
     };
 }
