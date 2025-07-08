@@ -33,7 +33,9 @@
 /*                                                                            */
 /******************************************************************************/
 
-#define NUMBER_CLIENTS          2       // Number of players required to start the game
+#define NUMBER_CLIENTS_DEFAULT          2
+#define NUMBER_CLIENTS_MAX              9
+
 #define TICK_RATE               60.0f   // Number of simulation ticks per second
 #define SCROLL_SPEED            2.0f    // Horizontal scroll speed in tiles per second
 #define GRAVITY_SPEED           6.0f    // Vertical falling speed (gravity), tiles per second

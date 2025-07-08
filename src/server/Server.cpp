@@ -14,8 +14,8 @@
 /*                                                                            */
 /******************************************************************************/
 
-Jetpack::Server::Server(int port, std::string map)
-    : _port(port), _serverSocket(-1)
+Jetpack::Server::Server(int port, std::string map, int expectedPlayers)
+    : _port(port), _serverSocket(-1), _numberClients(expectedPlayers)
 {
     try {
         this->setupServer();
@@ -166,11 +166,24 @@ void Jetpack::Server::handleClientActivity(std::vector<struct pollfd> &pollFds)
             }
         } catch (const std::exception &e) {
             Jetpack::Utils::consoleLog("Client disconnected (" + std::string(e.what()) + ")", Jetpack::LogInfo::ERROR);
+            int playerIndex = this->findPlayerIndexByFd(client_fd);
+            if (playerIndex != -1)
+                _playerStates[playerIndex].setAlive(false);
             this->removeClient(clientIndex);
+            this->sendGameState();
             break;
         }
     }
 }
+
+int Jetpack::Server::findPlayerIndexByFd(int fd) const
+{
+    for (size_t i = 0; i < _playerStates.size(); ++i)
+        if (_playerStates[i].getSocket() == fd)
+            return static_cast<int>(i);
+    return -1;
+}
+
 
 std::vector<struct pollfd> Jetpack::Server::preparePollFds() const
 {
@@ -195,7 +208,7 @@ void Jetpack::Server::run()
             continue;
         this->handleNewClient(pollFds);
         this->handleClientActivity(pollFds);
-        if (this->countReadyClients() == NUMBER_CLIENTS) {
+        if (this->countReadyClients() == this->_numberClients) {
             this->startGameLoop();
             break;
         }
@@ -253,13 +266,13 @@ void Jetpack::Server::handleLogin(int fd, const Jetpack::Packet&)
     id = static_cast<uint8_t>(index);
     this->_clients[index]->setId(id);
     this->_clients[index]->setReady(true);
-    Jetpack::ProtocolUtils::sendPacket(fd, LOGIN_RESPONSE, {id});
+    Jetpack::ProtocolUtils::sendPacket(fd, LOGIN_RESPONSE, {id, 0, static_cast<uint8_t>(this->_numberClients)});
     Jetpack::Utils::consoleLog("New Client accepted, has ID " + std::to_string(id), Jetpack::LogInfo::SUCCESS);
     this->sendMap(id, this->_map);
     waitingPlayers = static_cast<uint8_t>(this->countReadyClients());
     for (const auto &client : this->_clients)
         Jetpack::ProtocolUtils::sendPacket(client->getSocket(), WAITING_PLAYERS_COUNT, {waitingPlayers});
-    if (this->countReadyClients() == NUMBER_CLIENTS)
+    if (this->countReadyClients() == this->_numberClients)
         this->lunchStart();
     else
         Jetpack::Utils::consoleLog("Client ID " + std::to_string(id) + " is waiting...", Jetpack::LogInfo::INFO);
@@ -413,9 +426,7 @@ void Jetpack::Server::checkCollisions(PlayerState &player)
             if (y < 0 || y >= static_cast<int>(_map.size()) ||
                 x < 0 || x >= static_cast<int>(_map[0].size()))
                 continue;
-
             TileType tile = _map[y][x];
-            
             if (tile == TileType::COIN) {
                 bool alreadyCollected = false;
                 for (const auto& coinPos : player.getCoinCollected()) {
@@ -424,7 +435,6 @@ void Jetpack::Server::checkCollisions(PlayerState &player)
                         break;
                     }
                 }
-
                 if (!alreadyCollected) {
                     player.addCoin();
                     player.addCoinCollected(x, y);
