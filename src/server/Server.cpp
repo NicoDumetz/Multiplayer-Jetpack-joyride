@@ -309,6 +309,7 @@ void Jetpack::Server::handlePlayerAction(int fd, const Jetpack::Packet& paquet)
     Jetpack::ProtocolUtils::sendPacket(fd, ACTION_ACK, ackPayload, this->_debug);
     if (this->_debug)
         Jetpack::Utils::consoleLog("Sent ACTION_ACK to fd " + std::to_string(fd), Jetpack::LogInfo::INFO);
+    
 }
 
 
