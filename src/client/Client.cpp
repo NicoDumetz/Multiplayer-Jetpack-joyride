@@ -77,14 +77,17 @@ void Jetpack::Client::handshakeWithServer()
 
 void Jetpack::Client::waitForGameStart()
 {
-    Jetpack::Packet start = Jetpack::ProtocolUtils::receivePacket(this->_socket);
+    while (1) {
+        Jetpack::Packet start = Jetpack::ProtocolUtils::receivePacket(this->_socket);
 
-    if (start.type != GAME_START)
-        throw ClientError("Expected GAME_START");
+        if (start.type == GAME_START)
+            break;
+        else if (start.type == WAITING_PLAYERS_COUNT)
+            this->_sharedState->setNumberClients(this->_sharedState->getNumberClients() + 1);
+    }
     this->_state = ClientState::Connected;
-    Jetpack::Utils::consoleLog("Game is starting!", Jetpack::LogInfo::SUCCESS);
+    Jetpack::Utils::consoleLog("All players are ready. Game is starting!", Jetpack::LogInfo::SUCCESS);
 }
-
 
 /******************************************************************************/
 /*                                                                            */

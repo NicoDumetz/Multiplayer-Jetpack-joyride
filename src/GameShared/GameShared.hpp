@@ -94,10 +94,23 @@ namespace Jetpack {
                 return this->_gameOver;
             }
 
+            void setNumberClients(int number)
+            {
+                std::lock_guard<std::mutex> lock(this->_mutex);
+                this->_numberClients = number;
+            }
+
+            int getNumberClients()
+            {
+                std::lock_guard<std::mutex> lock(this->_mutex);
+                return this->_numberClients;
+            }
+
         private:
             std::mutex _mutex;
             std::vector<PlayerState> _players;
             bool _gameOver = false;
+            int _numberClients;
     };
 
     enum class PlayerActionType {

@@ -29,6 +29,7 @@
 // Serveur -> Client
 #define LOGIN_RESPONSE 0x02
 #define MAP_TRANSFER 0x03
+#define WAITING_PLAYERS_COUNT 0x0B
 #define GAME_START 0x04
 #define GAME_STATE 0x06
 #define POSITION_UPDATE 0x07

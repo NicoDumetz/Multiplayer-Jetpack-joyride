@@ -246,6 +246,7 @@ void Jetpack::Server::handleLogin(int fd, const Jetpack::Packet&)
     int index = this->findClientIndexByFd(fd);
     uint8_t id;
     std::vector<uint8_t> payload;
+    uint8_t waitingPlayers;
 
     if (index == -1)
         return;
@@ -254,13 +255,16 @@ void Jetpack::Server::handleLogin(int fd, const Jetpack::Packet&)
     this->_clients[index]->setReady(true);
     Jetpack::ProtocolUtils::sendPacket(fd, LOGIN_RESPONSE, {id});
     Jetpack::Utils::consoleLog("New Client accepted, has ID " + std::to_string(id), Jetpack::LogInfo::SUCCESS);
+    payload.clear();
     for (auto &row : this->_map) {
         for (TileType tile : row)
             payload.push_back(static_cast<uint8_t>(tile));
         payload.push_back('\n');
     }
     Jetpack::ProtocolUtils::sendPacket(fd, MAP_TRANSFER, payload);
-    Jetpack::Utils::consoleLog("Map sent to Client ID " + std::to_string(id), Jetpack::LogInfo::INFO);
+    waitingPlayers = static_cast<uint8_t>(this->countReadyClients());
+    for (const auto &client : this->_clients)
+        Jetpack::ProtocolUtils::sendPacket(client->getSocket(), WAITING_PLAYERS_COUNT, {waitingPlayers});
     if (this->countReadyClients() == NUMBER_CLIENTS)
         this->lunchStart();
     else
