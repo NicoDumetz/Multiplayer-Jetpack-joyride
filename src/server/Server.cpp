@@ -398,7 +398,6 @@ void Jetpack::Server::processPlayers(int mapHeight, int mapWidth)
         }
         this->checkCollisions(player);
         this->sendPositionUpdate(player.getId(), player.getX(), player.getY());
-        this->sendMap(player.getId(), player.map);
     }
 }
 
@@ -410,6 +409,7 @@ void Jetpack::Server::checkCollisions(PlayerState &player)
         player.map[player.getTileY()][player.getTileX()] = TileType::EMPTY;
         player.addCoin();
         sendCoinEvent(player.getId(), player.getCurrentX(), player.getCurrentY());
+        this->sendMap(player.getId(), player.map);
     } else if (tile == TileType::ZAPPER)
         player.setAlive(false);
 }
