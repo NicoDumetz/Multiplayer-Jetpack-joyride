@@ -18,7 +18,6 @@
 #include "client/Client.hpp"
 #include "Error/Error.hpp"
 #include "GameOverScreen/GameOverScreen.hpp"
-#include "GameWaitingRoom/WaitingRoom.hpp"
 
 /// COIN ///
 #define COIN_FRAME 6
@@ -68,6 +67,8 @@ namespace Jetpack {
         void showGameOverScreen(uint8_t winnerId);
         static bool isStoppedSound(const sf::Sound& sound);
 
+
+
       private:
         std::shared_ptr<Jetpack::Client> _client;
         sf::RenderWindow _window;
@@ -94,7 +95,6 @@ namespace Jetpack {
         std::map<std::string, sf::SoundBuffer> soundBuffers;
         std::vector<sf::Sound> sounds;
         std::unique_ptr<GameOverScreen> _gameOverScreen;
-        std::unique_ptr<WaitingRoom> _waitingRoom;
     };
 }
 

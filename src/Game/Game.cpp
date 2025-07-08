@@ -95,11 +95,29 @@ void Jetpack::Game::run()
 
 void Jetpack::Game::waitingRoom()
 {
-    if (!_waitingRoom) {
-        _waitingRoom = std::make_unique<WaitingRoom>(_window, _font, _sharedState, _client, _playerSpriteSheet);
+    sf::Text text("Waiting for players...", _font, 60);
+    text.setFillColor(sf::Color::White);
+
+    sf::FloatRect bounds = text.getLocalBounds();
+    text.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
+    text.setPosition(WINDOW_WIDTH / 2.f, WINDOW_HEIGHT / 2.f);
+
+    while (_window.isOpen() && _client->getState() == Jetpack::ClientState::Waiting) {
+        sf::Event event;
+        while (_window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                _client->disconnect();
+                _window.close();
+                return;
+            } else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+                _window.close();
+                return;
+            }
+        }
+        _window.clear();
+        _window.draw(text);
+        _window.display();
     }
-    
-    _waitingRoom->run();
 }
 
 void Jetpack::Game::showGameOverScreen(uint8_t winnerId)
