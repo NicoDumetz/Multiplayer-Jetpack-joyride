@@ -84,6 +84,11 @@ namespace Jetpack {
         sf::RectangleShape _scoreBackground;
         std::vector<sf::Text> _scoreTexts;
         sf::Sprite _coinIcon;
+        sf::Music music;
+        std::map<std::string, sf::SoundBuffer> soundBuffers;
+        std::vector<sf::Sound> sounds;
+        void playMusic(const std::string& filename, float volume = 100.f);
+        void playSound(const std::string& name, float volume = 100.f);
     };
 }
 
