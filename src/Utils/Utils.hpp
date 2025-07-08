@@ -135,6 +135,8 @@ namespace Jetpack {
             return oss.str();
         }
 
+        static void checkDisplay(char **env);
+
     };
     std::ostream& operator<<(std::ostream& os, const LogInfo& color);
 
