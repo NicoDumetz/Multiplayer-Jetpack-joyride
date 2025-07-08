@@ -9,16 +9,35 @@
 Jetpack::Parser::Parser(int ac, char **av, Mode mode)
     : _mode(mode), _port(0)
 {
+    std::string filename;
+
     for (int i = 1; i < ac; i++) {
-        if (!strcmp(av[i], "-p") && i + 1 < ac && Jetpack::Utils::isNumber(av[i + 1]))
+        if (!Jetpack::String::strcmp(av[i], "-p") && i + 1 < ac && Jetpack::Utils::isNumber(av[i + 1]))
             this->_port = std::stoi(av[++i]);
-        else if (!strcmp(av[i], "-h") && i + 1 < ac)
+        else if (!Jetpack::String::strcmp(av[i], "-h") && i + 1 < ac)
             this->_ip = av[++i];
-        else if (!strcmp(av[i], "-m") && i + 1 < ac)
-            this->_mapPath = av[++i];
+        else if (!Jetpack::String::strcmp(av[i], "-m") && i + 1 < ac)
+            filename = av[++i];
         else
             throw ParserError("Invalid or missing arguments");
     }
-    if (_port == 0 || (this->_mode == Jetpack::Mode::CLIENT && this->_ip.empty()) || (this->_mode == Jetpack::Mode::SERVER && this-> _mapPath.empty()))
+    if (_port == 0 || (this->_mode == Jetpack::Mode::CLIENT && this->_ip.empty()) || (this->_mode == Jetpack::Mode::SERVER && filename.empty()))
         throw ParserError(this->_mode == Jetpack::Mode::CLIENT ? "Missing required arguments (-h or -p)" : "Missing required arguments (-p or -m)");
+    if (this->_mode == Jetpack::Mode::SERVER)
+        this->loadMapContent(filename);
+}
+
+void Jetpack::Parser::loadMapContent(std::string &filename)
+{
+    std::ifstream file(filename);
+    std::ostringstream content;
+
+    if (!file.is_open())
+        throw ParserError("Unable to open map file: " + filename);
+    content << file.rdbuf();
+    this->_map = content.str();
+    for (char c : this->_map) {
+        if (c != '_' && c != 'e' && c != 'c' && c != '\n')
+            throw ParserError("Invalid character in map file: '" + std::string(1, c) + "'");
+    }
 }
