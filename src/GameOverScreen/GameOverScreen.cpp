@@ -112,6 +112,8 @@ void Jetpack::GameOverScreen::setupFinalScores()
         scoreText.setCharacterSize(30);
         auto playerState = _sharedState->getPlayerState(i);
         std::string scoreStr = "J" + std::to_string(i) + ": " + std::to_string(playerState.getCoins()) + " pieces";
+        if (!playerState.isAlive())
+            scoreStr += " (dead)";
         scoreText.setString(scoreStr);
         sf::Color textColor = i == this->_currentPlayerId ? sf::Color::Yellow : sf::Color::White;
         scoreText.setFillColor(textColor);

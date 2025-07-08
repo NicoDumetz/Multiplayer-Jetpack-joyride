@@ -440,8 +440,10 @@ void Jetpack::Server::processPlayers(int mapHeight, int mapWidth)
         if (!player.hasJumped() && player.getY() < mapHeight - 1)
             player.setY(player.getY() + GRAVITY_SPEED * TICK_INTERVAL);
         player.setHasJumped(false);
-        if (player.getTileX() >= mapWidth) {
-            player.setAlive(false);
+        if (player.getTileX() >= mapWidth && !player.hasFinished()) {
+            player.setFinished(true);
+            if (_debug)
+                Jetpack::Utils::consoleLog("Player " + std::to_string(player.getId()) + " finished the map.", Jetpack::LogInfo::INFO);
             this->sendGameState();
             continue;
         }
@@ -488,7 +490,10 @@ void Jetpack::Server::checkCollisions(PlayerState &player)
 
 bool Jetpack::Server::isGameStillRunning()
 {
-    return std::any_of(this->_playerStates.begin(), _playerStates.end(),[](const PlayerState &p) {return p.isAlive();});
+    for (const auto& p : _playerStates)
+        if (!p.hasFinished() && p.isAlive())
+            return true;
+    return false;
 }
 
 void Jetpack::Server::handleGameOver()
@@ -506,28 +511,32 @@ void Jetpack::Server::handleGameOver()
             aliveCount++;
             lastAliveId = player.getId();
         }
-        if (this->_debug)
-            Jetpack::Utils::consoleLog("Player " + std::to_string(player.getId()) +
-                " has " + std::to_string(player.getCoins()) + " coins.", Jetpack::LogInfo::INFO);
-        if (player.getCoins() > bestScore) {
-            bestScore = player.getCoins();
-            winnerId = player.getId();
-            tie = false;
-        } else if (player.getCoins() == bestScore) {
-            tie = true;
-        }
     }
     if (aliveCount == 1) {
         winnerId = lastAliveId;
         if (this->_debug)
             Jetpack::Utils::consoleLog("Only one player alive: Player " + std::to_string(winnerId), Jetpack::LogInfo::INFO);
-    } else if (tie) {
-        winnerId = 255;
-        if (this->_debug)
-            Jetpack::Utils::consoleLog("It's a tie. No unique winner.", Jetpack::LogInfo::INFO);
     } else {
-        if (this->_debug)
-            Jetpack::Utils::consoleLog("Winner is player " + std::to_string(winnerId), Jetpack::LogInfo::INFO);
+        for (const auto &player : this->_playerStates) {
+            if (!player.isAlive() && !player.hasFinished())
+                continue;
+            if (this->_debug)
+                Jetpack::Utils::consoleLog("Alive Player " + std::to_string(player.getId()) + " has " + std::to_string(player.getCoins()) + " coins.", Jetpack::LogInfo::INFO);
+            if (player.getCoins() > bestScore) {
+                bestScore = player.getCoins();
+                winnerId = player.getId();
+                tie = false;
+            } else if (player.getCoins() == bestScore)
+                tie = true;
+        }
+        if (tie) {
+            winnerId = 255;
+            if (this->_debug)
+                Jetpack::Utils::consoleLog("It's a tie among alive players. No unique winner.", Jetpack::LogInfo::INFO);
+        } else {
+            if (this->_debug)
+                Jetpack::Utils::consoleLog("Winner among alive players is player " + std::to_string(winnerId), Jetpack::LogInfo::INFO);
+        }
     }
     std::vector<uint8_t> payload = {winnerId};
     for (const auto &client : _clients) {
@@ -537,4 +546,3 @@ void Jetpack::Server::handleGameOver()
     }
     Jetpack::Utils::consoleLog("Game ended (all players dead or map finished)", Jetpack::LogInfo::INFO);
 }
-

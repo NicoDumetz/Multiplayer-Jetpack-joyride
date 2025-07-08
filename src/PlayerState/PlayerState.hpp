@@ -47,6 +47,9 @@ namespace Jetpack {
             {
                 this->_coinCollected.push_back(std::make_pair(coinX, coinY));
             }
+            inline bool hasFinished() const {return this->_hasFinished;}
+            inline void setFinished(bool finished) {this->_hasFinished = finished;}
+
 
 
         private:
@@ -58,6 +61,7 @@ namespace Jetpack {
             int _coins;
             bool _hasJumped;
             std::vector<std::pair<int, int>> _coinCollected;
+            bool _hasFinished = false;
 
         public:
             std::vector<std::vector<TileType>> map;
