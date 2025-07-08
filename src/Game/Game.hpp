@@ -48,9 +48,7 @@ namespace Jetpack {
         void run();
         void waitingRoom();
 
-    private:
-        struct animState;
-
+      private:
         void initGraphics();
         void updateMapScroll(float dt);
         void updateAnimation();
@@ -58,7 +56,7 @@ namespace Jetpack {
         void renderPlayers();
         void drawGrid();
         void drawBackground();
-        int getPlayerAnimationRow(Jetpack::PlayerState& playerState, animState& state);
+        int getPlayerAnimationRow(int playerId, float playerY) const;
         void initObjectsFromMap();
         void updateObjects(float dt);
         void renderObjects();
@@ -70,25 +68,7 @@ namespace Jetpack {
         void showGameOverScreen(uint8_t winnerId);
         static bool isStoppedSound(const sf::Sound& sound);
 
-        enum class state {
-            WALK = 0,
-            FLY,
-            LAND,
-            ELECTROCUTE,
-            BURN,
-            SPIN,
-            NONE
-        };
-
-        struct animState {
-            state _state = Game::state::WALK;
-            int frame = 0;
-            float clock = 0.f;
-            float slow = 0.f;
-            int loop = 2;
-        };
-
-    private:
+      private:
         std::shared_ptr<Jetpack::Client> _client;
         sf::RenderWindow _window;
         std::shared_ptr<SharedGameState> _sharedState;
@@ -97,7 +77,6 @@ namespace Jetpack {
         sf::Sprite _mapSprite;
         sf::Texture _playerSpriteSheet;
         std::vector<sf::Sprite> _playerSprites;
-        std::vector<animState> _playerAnimState;
         sf::Clock _animationClock;
         std::vector<Jetpack::Coin> _coins;
         std::vector<Jetpack::Zapper> _zappers;

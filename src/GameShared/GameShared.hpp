@@ -115,7 +115,7 @@ namespace Jetpack {
             std::mutex _mutex;
             std::vector<PlayerState> _players;
             bool _gameOver = false;
-            int _numberClients;
+            int _numberClients = 0;
     };
 
     enum class PlayerActionType {

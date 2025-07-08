@@ -48,9 +48,9 @@
 #define TICK_INTERVAL           (1.0f / TICK_RATE) // Duration of a single simulation tick
 #define JUMP_DELTA_Y            1.0f    // Jump delta Y (not always used)
 #define COLLISION_MARGIN_LEFT    0.50f
-#define COLLISION_MARGIN_RIGHT   0.30f
+#define COLLISION_MARGIN_RIGHT   0.50f
 #define COLLISION_MARGIN_TOP     0.01f
-#define COLLISION_MARGIN_BOTTOM  0.10f
+#define COLLISION_MARGIN_BOTTOM  0.20f
 
 /******************************************************************************/
 /*                                                                            */
@@ -81,7 +81,7 @@
 #define PLAYER_SPRITE_WIDTH     (SPRITE_SHEET_WIDTH / 4) // One frame width (4 frames per row)
 #define PLAYER_SPRITE_HEIGHT    (SPRITE_SHEET_HEIGHT / 6) // One frame height (6 rows total)
 
-#define ANIMATION_FRAME_TIME    0.45f    // Time between frames in seconds
+#define ANIMATION_FRAME_TIME    0.1f    // Time between frames in seconds
 #define FIXED_PLAYER_X          (4 * TILE_SIZE) // X position where players are drawn
 
 /******************************************************************************/
