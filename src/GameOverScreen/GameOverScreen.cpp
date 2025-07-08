@@ -15,6 +15,7 @@ Jetpack::GameOverScreen::GameOverScreen(sf::RenderWindow& window, sf::Font& font
 
 void Jetpack::GameOverScreen::run(uint8_t winnerId)
 {
+    initBackground();
     setupUI(winnerId);
     //playSound("gameover", 70.f); todo : trouver un son de game over
     
@@ -34,6 +35,18 @@ void Jetpack::GameOverScreen::run(uint8_t winnerId)
             }
         }
     }
+}
+
+void Jetpack::GameOverScreen::initBackground()
+{
+    if(!_backgroundTexture.loadFromFile("assets/end.jpg")) {
+        return;
+    }
+    _backgroundSprite.setTexture(_backgroundTexture);
+
+    float scaleX = static_cast<float>(_window.getSize().x) / _backgroundTexture.getSize().x;
+    float scaleY = static_cast<float>(_window.getSize().y) / _backgroundTexture.getSize().y;
+    _backgroundSprite.setScale(scaleX, scaleY);
 }
 
 void Jetpack::GameOverScreen::playSound(const std::string& name, float volume)
@@ -68,13 +81,13 @@ void Jetpack::GameOverScreen::setupUI(uint8_t winnerId)
     _winnerText.setOrigin(winnerBounds.width / 2.f, winnerBounds.height / 2.f);
     _winnerText.setPosition(_window.getSize().x / 2.f, _window.getSize().y / 2.f);
 
-    _instructionText.setString("Appuyez sur [Espace] ou [Escape] pour quitter");
+    _instructionText.setString("Appuyez sur [Escape] pour quitter");
     _instructionText.setFont(_font);
     _instructionText.setCharacterSize(24);
     _instructionText.setFillColor(sf::Color(200, 200, 200));
     sf::FloatRect instructionBounds = _instructionText.getLocalBounds();
     _instructionText.setOrigin(instructionBounds.width / 2.f, instructionBounds.height / 2.f);
-    _instructionText.setPosition(_window.getSize().x / 2.f, _window.getSize().y * 0.7f);
+    _instructionText.setPosition(_window.getSize().x / 2.f, _window.getSize().y / 6.f);
 
     setupFinalScores();
 }
@@ -115,7 +128,7 @@ void Jetpack::GameOverScreen::handleEvents()
         if (event.type == sf::Event::Closed) {
             _window.close();
         } else if (event.type == sf::Event::KeyPressed && 
-                (event.key.code == sf::Keyboard::Space || event.key.code == sf::Keyboard::Escape)) {
+                (event.key.code == sf::Keyboard::Escape)) {
             _fadeOut = true;
         }
     }
@@ -130,7 +143,8 @@ void Jetpack::GameOverScreen::update()
 void Jetpack::GameOverScreen::render()
 {
     _window.clear();
-    
+
+    _window.draw(_backgroundSprite);
     _window.draw(_gameOverText);
     _window.draw(_winnerText);
     

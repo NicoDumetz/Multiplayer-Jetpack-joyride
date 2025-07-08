@@ -30,6 +30,7 @@ class GameOverScreen {
         void handleEvents();
         void update();
         void render();
+        void initBackground();
         
         sf::RenderWindow& _window;
         sf::Font& _font;
@@ -40,6 +41,8 @@ class GameOverScreen {
         sf::Text _winnerText;
         sf::Text _instructionText;
         std::vector<sf::Text> _finalScores;
+        sf::Texture _backgroundTexture;
+        sf::Sprite _backgroundSprite;
         
         sf::Clock _animClock;
         bool _fadeOut;

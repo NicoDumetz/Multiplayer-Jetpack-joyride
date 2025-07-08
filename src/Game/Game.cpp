@@ -62,6 +62,7 @@ void Jetpack::Game::run()
     sf::Event event;
     sf::Clock clock;
     float deltaTime;
+    bool wasJetpackActive = false;
 
     playMusic("theme", 50.f);
     while (_window.isOpen()) {
@@ -88,8 +89,17 @@ void Jetpack::Game::run()
         updatePlayerPositions();
         updateObjects(deltaTime);
         updateCoinsVisibility();
-        if (_window.hasFocus() && sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
+        
+        bool isJetpackActive = _window.hasFocus() && sf::Keyboard::isKeyPressed(sf::Keyboard::Space);
+        if (isJetpackActive && !wasJetpackActive) {
+            playSound("jetpack", 40.f);
+        }
+        wasJetpackActive = isJetpackActive;
+        
+        if (isJetpackActive) {
             _client->sendJump();
+        }
+        
         _window.clear();
         drawBackground();
         drawGrid();
