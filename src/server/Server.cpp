@@ -166,11 +166,24 @@ void Jetpack::Server::handleClientActivity(std::vector<struct pollfd> &pollFds)
             }
         } catch (const std::exception &e) {
             Jetpack::Utils::consoleLog("Client disconnected (" + std::string(e.what()) + ")", Jetpack::LogInfo::ERROR);
+            int playerIndex = this->findPlayerIndexByFd(client_fd);
+            if (playerIndex != -1)
+                _playerStates[playerIndex].setAlive(false);
             this->removeClient(clientIndex);
+            this->sendGameState();
             break;
         }
     }
 }
+
+int Jetpack::Server::findPlayerIndexByFd(int fd) const
+{
+    for (size_t i = 0; i < _playerStates.size(); ++i)
+        if (_playerStates[i].getSocket() == fd)
+            return static_cast<int>(i);
+    return -1;
+}
+
 
 std::vector<struct pollfd> Jetpack::Server::preparePollFds() const
 {
@@ -413,9 +426,7 @@ void Jetpack::Server::checkCollisions(PlayerState &player)
             if (y < 0 || y >= static_cast<int>(_map.size()) ||
                 x < 0 || x >= static_cast<int>(_map[0].size()))
                 continue;
-
             TileType tile = _map[y][x];
-            
             if (tile == TileType::COIN) {
                 bool alreadyCollected = false;
                 for (const auto& coinPos : player.getCoinCollected()) {
@@ -424,7 +435,6 @@ void Jetpack::Server::checkCollisions(PlayerState &player)
                         break;
                     }
                 }
-
                 if (!alreadyCollected) {
                     player.addCoin();
                     player.addCoinCollected(x, y);

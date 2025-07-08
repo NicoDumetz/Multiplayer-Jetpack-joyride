@@ -56,13 +56,11 @@ void Jetpack::Game::run()
     sf::Clock clock;
     float deltaTime;
 
-    playMusic("theme", 50.f);
-
     while (_window.isOpen() && _client->getState() == Jetpack::ClientState::Connected) {
         while (_window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) {
                 _window.close();
-                throw GameError("Window closed by user");
+                this->_client->disconnect();
             }
         }
         deltaTime = clock.restart().asSeconds();
@@ -87,6 +85,7 @@ void Jetpack::Game::waitingRoom()
 {
     sf::Text text("Waiting for players...", _font, 60);
     text.setFillColor(sf::Color::White);
+
     sf::FloatRect bounds = text.getLocalBounds();
     text.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
     text.setPosition(WINDOW_WIDTH / 2.f, WINDOW_HEIGHT / 2.f);
@@ -94,8 +93,11 @@ void Jetpack::Game::waitingRoom()
     while (_window.isOpen() && _client->getState() == Jetpack::ClientState::Waiting) {
         sf::Event event;
         while (_window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed)
+            if (event.type == sf::Event::Closed) {
+                _client->disconnect();
                 _window.close();
+                return;
+            }
         }
         _window.clear();
         _window.draw(text);
@@ -313,55 +315,4 @@ void Jetpack::Game::renderScoreDisplay()
         
         _window.draw(_scoreTexts[i]);
     }
-}
-
-void Jetpack::Game::playMusic(const std::string& filename, float volume)
-{
-    std::string filepath = "assets/" + filename + ".ogg";
-    std::ifstream fileCheck(filepath);
-    if (!fileCheck) {
-        return;
-    }
-    fileCheck.close();
-    
-    if (!music.openFromFile(filepath)) {
-        Jetpack::Utils::consoleLog("Failed to load music: " + filename, Jetpack::LogInfo::ERROR);
-        return;
-    }
-    
-    music.setLoop(true);
-    music.setVolume(volume);
-    music.play();
-}
-
-void Jetpack::Game::playSound(const std::string& name, float volume)
-{
-    std::string filepath = "assets/" + name + ".ogg";
-    std::ifstream fileCheck(filepath);
-    if (!fileCheck) {
-        return;
-    }
-    fileCheck.close();
-    
-    auto it = soundBuffers.find(name);
-    
-    if (it == soundBuffers.end()) {
-        sf::SoundBuffer buffer;
-        if (!buffer.loadFromFile(filepath)) {
-            Jetpack::Utils::consoleLog("Failed to load sound: " + name, Jetpack::LogInfo::ERROR);
-            return;
-        }
-        it = soundBuffers.insert(std::make_pair(name, buffer)).first;
-    }
-
-    sounds.erase(
-        std::remove_if(sounds.begin(), sounds.end(), 
-            [](const sf::Sound& s) { return s.getStatus() == sf::Sound::Stopped; }
-        ),
-        sounds.end()
-    );
-    
-    sounds.emplace_back(it->second);
-    sounds.back().setVolume(volume);
-    sounds.back().play();
 }

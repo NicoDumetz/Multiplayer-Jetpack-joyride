@@ -7,6 +7,7 @@
 
 #pragma once
 #include <unistd.h>
+#include <sys/socket.h>
 #include "Error/Error.hpp"
 
 namespace Jetpack {
@@ -27,8 +28,12 @@ namespace Jetpack {
 
         static ssize_t read(int fd, void *buffer, size_t len)
         {
+            if (len == 0)
+                return 0;
             ssize_t ret = ::read(fd, buffer, len);
-            if (ret == -1)
+            if (ret == 0)
+                throw IOError("connection closed by peer");
+            if (ret < 0)
                 throw IOError("read operation failed");
             return ret;
         }
@@ -37,6 +42,13 @@ namespace Jetpack {
         {
             if (::close(fd) == -1)
                 throw IOError("close operation failed");
+        }
+
+        static void closeSocket(int fd)
+        {
+            ::shutdown(fd, SHUT_RDWR);
+            if (::close(fd) == -1)
+                throw IOError("socket close operation failed");
         }
     };
 }

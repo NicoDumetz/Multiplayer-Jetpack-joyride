@@ -25,23 +25,22 @@ int main(int ac, char **av, char **env)
         });
         game.waitingRoom();
         waitThread.join();
-        std::thread waitThread_run([&client]() {
+        if (client->getState() == Jetpack::ClientState::Disconnected) {
+            Jetpack::Utils::consoleLog("Client disconnected.", Jetpack::LogInfo::INFO);
+            return 84;
+        }
+        std::thread runThread([&client]() {
             client->run();
         });
         game.run();
-        waitThread_run.join();
+        runThread.join();
     } catch (const Jetpack::Parser::ParserError &e) {
         Jetpack::Utils::printUsageClient();
         Jetpack::Utils::consoleLog(e.what(), Jetpack::LogInfo::ERROR);
         return 84;
-    } catch (const Jetpack::Game::GameError &e) {
-        Jetpack::Utils::consoleLog("Game exited: " + std::string(e.what()), Jetpack::LogInfo::ERROR);
-        return 84;
-
     } catch (const Jetpack::Error &e) {
         Jetpack::Utils::consoleLog(e.what(), Jetpack::LogInfo::ERROR);
         return 84;
-
     }
     return 0;
 }
