@@ -14,7 +14,7 @@ int main(int ac, char **av)
 {
     try {
         Jetpack::Parser args(ac, av, Jetpack::Mode::SERVER);
-        Jetpack::Server serv(args.getPort());
+        Jetpack::Server serv(args.getPort(), args.getMap());
 
         serv.run();
     } catch (const Jetpack::Parser::ParserError &e) {

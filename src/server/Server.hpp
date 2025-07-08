@@ -32,7 +32,7 @@
 namespace Jetpack {
     class Server {
     public:
-        Server(int port);
+        Server(int port, std::string map);
         ~Server();
 
         class ServerError : public Jetpack::Error {
@@ -40,6 +40,7 @@ namespace Jetpack {
                 ServerError(const std::string &message) : Jetpack::Error(message) {}
         };
 
+        void parseMap(const std::string &map);
         void run();
         void setupServer();
         void acceptClient();
@@ -51,18 +52,19 @@ namespace Jetpack {
         int getPort() const {return this->_port;}
         int getSocket() const {return this->_serverSocket;}
         int findClientIndexByFd(int fd) const;
+        void lunchStart();
+        int countReadyClients() const;
 
     private:
         int _port;
         int _serverSocket;
+        std::vector<std::vector<TileType>> _map;
         std::vector<std::unique_ptr<Jetpack::RemoteClient>> _clients;
         std::map<uint8_t, std::function<void(int, const Jetpack::Packet&)>> _packetHandlers = {
-            {0x01, [this](int fd, const Jetpack::Packet& pkt) {return this->handleLogin(fd, pkt);}},
-            {0x05, [this](int fd, const Jetpack::Packet& pkt) {return this->handlePlayerAction(fd, pkt);}},
-            {0x09, [this](int fd, const Jetpack::Packet& pkt) {return this->handleGameOver(fd, pkt);}}
+            {LOGIN_REQUEST, [this](int fd, const Jetpack::Packet& pkt) {return this->handleLogin(fd, pkt);}},
+            {PLAYER_ACTION, [this](int fd, const Jetpack::Packet& pkt) {return this->handlePlayerAction(fd, pkt);}},
         };
         void handleLogin(int fd, const Jetpack::Packet& pkt);
         void handlePlayerAction(int fd, const Jetpack::Packet& pkt);
-        void handleGameOver(int fd, const Jetpack::Packet& pkt);
     };
 }

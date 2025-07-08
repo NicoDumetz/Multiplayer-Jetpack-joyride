@@ -13,11 +13,12 @@
 /*                                                                            */
 /******************************************************************************/
 
-Jetpack::Server::Server(int port)
+Jetpack::Server::Server(int port, std::string map)
     : _port(port), _serverSocket(-1)
 {
     try {
         this->setupServer();
+        this->parseMap(map);
     } catch (const Jetpack::Error &e) {
         throw ServerError("Server setup failed: " + std::string(e.what()));
     }
@@ -40,8 +41,6 @@ Jetpack::Server::~Server()
 /*                                                                            */
 /******************************************************************************/
 
-
-
 void Jetpack::Server::setupServer()
 {
     Jetpack::SocketAddress addr;
@@ -53,6 +52,35 @@ void Jetpack::Server::setupServer()
     Jetpack::Network::bind(this->_serverSocket, addr.raw(), *addr.lenPtr());
     Jetpack::Network::listen(this->_serverSocket, 2);
     Jetpack::Utils::consoleLog("Server listening on port " + std::to_string(_port), Jetpack::LogInfo::INFO);
+}
+
+void Jetpack::Server::parseMap(const std::string &mapStr)
+{
+    std::vector<TileType> row;
+
+    for (char c : mapStr) {
+        switch (c) {
+            case '\n':
+                if (!row.empty()) {
+                    this->_map.push_back(row);
+                    row.clear();
+                }
+                break;
+            case '_':
+                row.push_back(TileType::EMPTY);
+                break;
+            case 'c':
+                row.push_back(TileType::COIN);
+                break;
+            case 'e':
+                row.push_back(TileType::ZAPPER);
+                break;
+            default:
+                break;
+        }
+    }
+    if (!row.empty())
+        this->_map.push_back(row);
 }
 
 
@@ -69,7 +97,6 @@ void Jetpack::Server::acceptClient()
     int socket = Jetpack::Network::accept(this->_serverSocket, clientAddr.raw(), clientAddr.lenPtr());
 
     this->_clients.push_back(std::make_unique<Jetpack::RemoteClient>(socket));
-    Jetpack::Utils::consoleLog("New Client (fd = " + std::to_string(socket) + ")", Jetpack::LogInfo::SUCCESS);
 }
 
 
@@ -112,7 +139,7 @@ void Jetpack::Server::handleClientActivity(std::vector<struct pollfd> &pollFds)
     size_t clientIndex;
     int client_fd;
 
-    for (size_t i = 1; i < pollFds.size(); ++i) {
+    for (size_t i = 1; i < pollFds.size(); i++) {
         clientIndex = i - 1;
         if (clientIndex >= this->_clients.size() || !(pollFds[i].revents & POLLIN))
             continue;
@@ -161,7 +188,7 @@ void Jetpack::Server::run()
 
 /******************************************************************************/
 /*                                                                            */
-/*                               IN WORKING                                   */
+/*                               PROTOCOLE                                    */
 /*                                                                            */
 /******************************************************************************/
 
@@ -173,27 +200,50 @@ int Jetpack::Server::findClientIndexByFd(int fd) const
     return -1;
 }
 
+void Jetpack::Server::lunchStart()
+{
+    for (const auto &client : this->_clients)
+        Jetpack::ProtocolUtils::sendPacket(client->getSocket(), GAME_START, {});
+    Jetpack::Utils::consoleLog("All Clients are Ready. GAME_START send.", Jetpack::LogInfo::SUCCESS);
+}
+
+int Jetpack::Server::countReadyClients() const
+{
+    int count = 0;
+
+    for (auto &client : this->_clients)
+        if (client->isReady())
+            count++;
+    return count;
+}
 
 void Jetpack::Server::handleLogin(int fd, const Jetpack::Packet&)
 {
     int index = this->findClientIndexByFd(fd);
     uint8_t id;
+    std::vector<uint8_t> payload;
 
     if (index == -1)
         return;
     id = static_cast<uint8_t>(index);
     this->_clients[index]->setId(id);
     this->_clients[index]->setReady(true);
-    Jetpack::ProtocolUtils::sendPacket(fd, 0x02, {id});
-    Jetpack::Utils::consoleLog("Client " + std::to_string(fd) + " ID " + std::to_string(id), Jetpack::LogInfo::SUCCESS);
+    Jetpack::ProtocolUtils::sendPacket(fd, LOGIN_RESPONSE, {id});
+    Jetpack::Utils::consoleLog("New Client accepted, has ID " + std::to_string(id), Jetpack::LogInfo::SUCCESS);
+    for (auto &row : this->_map) {
+        for (TileType tile : row)
+            payload.push_back(static_cast<uint8_t>(tile));
+        payload.push_back('\n');
+    }
+    Jetpack::ProtocolUtils::sendPacket(fd, MAP_TRANSFER, payload);
+    Jetpack::Utils::consoleLog("Map sent to Client ID " + std::to_string(id), Jetpack::LogInfo::INFO);
+    if (this->countReadyClients() == NUMBER_CLIENTS)
+        this->lunchStart();
+    else
+        Jetpack::Utils::consoleLog("Client ID " + std::to_string(id) + " is waiting...", Jetpack::LogInfo::INFO);
 }
 
 void Jetpack::Server::handlePlayerAction(int, const Jetpack::Packet&)
-{
-    return;
-}
-
-void Jetpack::Server::handleGameOver(int, const Jetpack::Packet&)
 {
     return;
 }
