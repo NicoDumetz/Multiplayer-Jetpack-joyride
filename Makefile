@@ -25,7 +25,8 @@ NAME_CLIENT = jetpack_client
 
 CXX = g++
 CXXFLAGS = -Wall -Wextra -pthread -I./src
-LDFLAGS_CLIENT = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -lsfml-network
+LDFLAGS_CLIENT = -lsfml-graphics -lsfml-window -lsfml-system \
+	-lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -lsfml-network
 
 
 all: server client
