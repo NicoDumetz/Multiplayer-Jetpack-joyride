@@ -59,6 +59,7 @@ namespace Jetpack {
         void updateObjects(float dt);
         void renderObjects();
         void renderScoreDisplay();
+        void initScoreDisplay();
 
     private:
         std::shared_ptr<Jetpack::Client> _client;

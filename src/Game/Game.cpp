@@ -47,7 +47,9 @@ void Jetpack::Game::initGraphics()
         _playerSprites.push_back(sprite);
     }
     _animationClock.restart();
+    initScoreDisplay();
 }
+
 void Jetpack::Game::run()
 {
     sf::Event event;
@@ -74,6 +76,7 @@ void Jetpack::Game::run()
         drawGrid();
         renderObjects();
         renderPlayers();
+        renderScoreDisplay();
         _window.display();
     }
 }
@@ -252,5 +255,53 @@ void Jetpack::Game::updateCoinsVisibility()
         if (isCollected) {
             coin.setTransparent(true);
         }
+    }
+}
+
+void Jetpack::Game::initScoreDisplay()
+{
+    _scoreBackground.setSize(sf::Vector2f(120, 10 + NUMBER_CLIENTS * 25));
+    _scoreBackground.setFillColor(sf::Color(0, 0, 0, 150));
+    _scoreBackground.setPosition(SCORE_MARGIN_LEFT, SCORE_MARGIN_TOP);
+
+    _scoreTexts.clear();
+    for (int i = 0; i < NUMBER_CLIENTS; ++i) {
+        sf::Text scoreText;
+        scoreText.setFont(_font);
+        scoreText.setCharacterSize(SCORE_FONT_SIZE);
+        scoreText.setPosition(
+            SCORE_MARGIN_LEFT + 10, 
+            SCORE_MARGIN_TOP + 5 + i * 25
+        );
+        sf::Color textColor;
+        if (i == 0) 
+            textColor = sf::Color(50, 200, 50);
+        else if (i == 1)
+            textColor = sf::Color(200, 50, 50);
+        else 
+            textColor = sf::Color(50, 50, 200);
+        
+        scoreText.setFillColor(textColor);
+        scoreText.setString("J" + std::to_string(i) + ": 0");
+        _scoreTexts.push_back(scoreText);
+    }
+}
+
+
+void Jetpack::Game::renderScoreDisplay()
+{
+    _window.draw(_scoreBackground);
+
+    for (int i = 0; i < std::min(static_cast<int>(_scoreTexts.size()), NUMBER_CLIENTS); ++i) {
+        auto playerState = _sharedState->getPlayerState(i);
+        
+        _scoreTexts[i].setString("J" + std::to_string(i) + ": " + 
+                                std::to_string(playerState.getCoins()));
+        
+        sf::Color color = _scoreTexts[i].getFillColor();
+        color.a = playerState.isAlive() ? 255 : 128;
+        _scoreTexts[i].setFillColor(color);
+        
+        _window.draw(_scoreTexts[i]);
     }
 }
