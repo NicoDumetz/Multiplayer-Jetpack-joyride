@@ -19,9 +19,9 @@
 #include "RemoteClient/remoteClient.hpp"
 #include "Error/Error.hpp"
 #include <functional>
+#include <cmath>
 #include "SocketAddress/SocketAddress.hpp"
-#define NUMBER_CLIENTS 2
-
+#include "PlayerState/PlayerState.hpp"
 
 /******************************************************************************/
 /*                                                                            */
@@ -30,6 +30,7 @@
 /******************************************************************************/
 
 namespace Jetpack {
+
     class Server {
     public:
         Server(int port, std::string map);
@@ -47,6 +48,8 @@ namespace Jetpack {
         void removeClient(int clientIndex);
         std::vector<struct pollfd> preparePollFds() const;
         bool waitForEvents(std::vector<struct pollfd> &pollFds) const;
+        bool waitForEvents(std::vector<struct pollfd> &pollFds, int timeoutMs);
+
         void handleNewClient(std::vector<struct pollfd> &pollFds);
         void handleClientActivity(std::vector<struct pollfd> &pollFds);
         int getPort() const {return this->_port;}
@@ -54,6 +57,11 @@ namespace Jetpack {
         int findClientIndexByFd(int fd) const;
         void lunchStart();
         int countReadyClients() const;
+        void processNetworkEvents();
+        void processPlayers(int mapHeight, int mapWidth);
+        void checkCollisions(PlayerState &player);
+        bool isGameStillRunning();
+        void handleGameOver();
 
     private:
         int _port;
@@ -64,7 +72,14 @@ namespace Jetpack {
             {LOGIN_REQUEST, [this](int fd, const Jetpack::Packet& pkt) {return this->handleLogin(fd, pkt);}},
             {PLAYER_ACTION, [this](int fd, const Jetpack::Packet& pkt) {return this->handlePlayerAction(fd, pkt);}},
         };
+        std::vector<PlayerState> _playerStates;
+
+        void startGameLoop();
+        void sendGameState();
+        void sendCoinEvent(uint8_t playerId);
+        void sendPositionUpdate(uint8_t playerId, float x, float y);
         void handleLogin(int fd, const Jetpack::Packet& pkt);
         void handlePlayerAction(int fd, const Jetpack::Packet& pkt);
     };
+
 }

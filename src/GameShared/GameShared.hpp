@@ -9,27 +9,74 @@
 #include <mutex>
 #include <vector>
 #include <cstdint>
+#include "Error/Error.hpp"
+#include "PlayerState/PlayerState.hpp"
+#include "server/Server.hpp"
 
 namespace Jetpack {
 
-    struct Player {
-        float y = 0.f;
-        bool alive = true;
-    };
-
     class SharedGameState {
         public:
-            void setPlayerState(uint8_t id, float y, bool alive)
+            SharedGameState() {
+                this->_players.resize(NUMBER_CLIENTS);
+                for (int i = 0; i < NUMBER_CLIENTS; i++) {
+                    this->_players[i] = PlayerState(i, -1);
+                    this->_players[i].setX(0.f);
+                    this->_players[i].setY(0.f);
+                    this->_players[i].setAlive(true);
+                }
+            }
+            ~SharedGameState() = default;
+
+            void updatePlayerPosition(uint8_t id, float x, float y)
+            {
+                std::lock_guard<std::mutex> lock(this->_mutex);
+
+                if (id >= this->_players.size())
+                    throw Jetpack::Error("Invalid player ID: " + std::to_string(id));
+                this->_players[id].setX(x);
+                this->_players[id].setY(y);
+            }
+
+            void updatePlayerAliveStatus(uint8_t id, bool alive)
+            {
+                std::lock_guard<std::mutex> lock(this->_mutex);
+
+                if (id >= this->_players.size())
+                    throw Jetpack::Error("Invalid player ID: " + std::to_string(id));
+                this->_players[id].setAlive(alive);
+            }
+
+            void updatePlayerCoins(uint8_t id, int coins)
+            {
+                std::lock_guard<std::mutex> lock(this->_mutex);
+
+                if (id >= this->_players.size())
+                    throw Jetpack::Error("Invalid player ID: " + std::to_string(id));
+                this->_players[id].setCoins(coins);
+            }
+
+            void setPlayerState(uint8_t id, float x, float y, bool alive, int coins)
             {
                 std::lock_guard<std::mutex> lock(this->_mutex);
 
                 if (id >= this->_players.size())
                     this->_players.resize(id + 1);
-                this->_players[id].y = y;
-                this->_players[id].alive = alive;
+                this->_players[id].setX(x);
+                this->_players[id].setY(y);
+                this->_players[id].setAlive(alive);
+                this->_players[id].setCoins(coins);
             }
 
-            std::vector<Player> getPlayers()
+            PlayerState &getPlayerState(uint8_t id)
+            {
+                std::lock_guard<std::mutex> lock(this->_mutex);
+                if (id >= this->_players.size())
+                    throw Jetpack::Error("Invalid player ID: " + std::to_string(id));
+                return this->_players[id];
+            }
+
+            std::vector<PlayerState> getPlayers()
             {
                 std::lock_guard<std::mutex> lock(this->_mutex);
                 return this->_players;
@@ -49,7 +96,7 @@ namespace Jetpack {
 
         private:
             std::mutex _mutex;
-            std::vector<Player> _players;
+            std::vector<PlayerState> _players;
             bool _gameOver = false;
     };
 
@@ -57,26 +104,4 @@ namespace Jetpack {
         NOTHING,
         JUMP,
     };
-
-    class ActionMutex {
-        public:
-            void pushJump()
-            {
-                std::lock_guard<std::mutex> lock(this->_mutex);
-                this->_hasJumped = true;
-            }
-
-            bool consumeJump()
-            {
-                std::lock_guard<std::mutex> lock(this->_mutex);
-                bool jumped = this->_hasJumped;
-                this->_hasJumped = false;
-                return jumped;
-            }
-
-        private:
-            std::mutex _mutex;
-            bool _hasJumped = false;
-    };
-
 }

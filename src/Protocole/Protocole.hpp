@@ -8,7 +8,6 @@
 #pragma once
 #include "Utils/Utils.hpp"
 
-
 namespace Jetpack {
     class ProtocolUtils {
         public:

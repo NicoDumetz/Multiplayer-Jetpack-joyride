@@ -24,6 +24,7 @@ Jetpack::Client::Client(const Jetpack::Parser &args)
     Jetpack::Network::inet_pton(AF_INET, args.getIp().c_str(), &in->sin_addr);
     Jetpack::Network::connect(this->_socket, addr.raw(), *addr.lenPtr());
     Jetpack::Utils::consoleLog("Connected to " + args.getIp(), Jetpack::LogInfo::SUCCESS);
+    this->_sharedState = std::make_shared<SharedGameState>();
 }
 
 Jetpack::Client::~Client()
@@ -54,27 +55,32 @@ void Jetpack::Client::parseMapPayload(const std::vector<uint8_t> &payload)
         this->_map.push_back(row);
 }
 
-void Jetpack::Client::connectToServer()
+void Jetpack::Client::handshakeWithServer()
 {
-    Jetpack::Packet login;
+    Jetpack::ProtocolUtils::sendPacket(this->_socket, LOGIN_REQUEST, {});
+    Jetpack::Packet login = Jetpack::ProtocolUtils::receivePacket(this->_socket);
     Jetpack::Packet map;
 
-    Jetpack::ProtocolUtils::sendPacket(this->_socket, LOGIN_REQUEST, {});
-    login = Jetpack::ProtocolUtils::receivePacket(this->_socket);
     if (login.type != LOGIN_RESPONSE || login.payload.size() != 1)
         throw ClientError("Invalid LOGIN_RESPONSE");
     this->_playerId = login.payload[0];
     Jetpack::Utils::consoleLog("Login accepted by server, has ID " + std::to_string(this->_playerId), Jetpack::LogInfo::INFO);
-    this->_state = ClientState::Waiting;
     map = Jetpack::ProtocolUtils::receivePacket(this->_socket);
     if (map.type != MAP_TRANSFER)
         throw ClientError("Expected MAP_TRANSFER");
-    parseMapPayload(map.payload);
-    Jetpack::Utils::consoleLog("Map was successfully receive.", Jetpack::LogInfo::INFO);
+    this->parseMapPayload(map.payload);
+    Jetpack::Utils::consoleLog("Map was successfully received.", Jetpack::LogInfo::INFO);
+    this->_state = ClientState::Waiting;
     Jetpack::Utils::consoleLog("Waiting game start...", Jetpack::LogInfo::INFO);
-    Jetpack::Packet start = Jetpack::ProtocolUtils::receivePacket(this->_socket); // start
+}
+
+void Jetpack::Client::waitForGameStart()
+{
+    Jetpack::Packet start = Jetpack::ProtocolUtils::receivePacket(this->_socket);
+
     if (start.type != GAME_START)
         throw ClientError("Expected GAME_START");
+    this->_state = ClientState::Connected;
     Jetpack::Utils::consoleLog("Game is starting!", Jetpack::LogInfo::SUCCESS);
 }
 
@@ -104,23 +110,59 @@ void Jetpack::Client::run()
     }
 }
 
-void Jetpack::Client::handleGameState(const Jetpack::Packet &)
+void Jetpack::Client::handleGameState(const Jetpack::Packet &paquet)
 {
-    Jetpack::Utils::consoleLog("GAME_STATE", Jetpack::LogInfo::INFO);
+    uint8_t id;
+    bool alive;
+
+    for (size_t i = 0; i + 2 <= paquet.payload.size(); i += 2) {
+        id = paquet.payload[i];
+        alive = paquet.payload[i + 1] == 1;
+        this->_sharedState->updatePlayerAliveStatus(id, alive);
+    }
 }
 
-void Jetpack::Client::handleCoinEvent(const Jetpack::Packet &)
+void Jetpack::Client::handlePositionUpdate(const Jetpack::Packet &paquet)
 {
-    Jetpack::Utils::consoleLog("COIN_EVENT", Jetpack::LogInfo::INFO);
+    if (paquet.payload.size() < 9)
+        return;
+    uint8_t playerId = paquet.payload[0];
+    float x;
+    float y;
+    std::memcpy(&x, &paquet.payload[1], sizeof(x));
+    std::memcpy(&y, &paquet.payload[5], sizeof(y));
+    this->_sharedState->updatePlayerPosition(playerId, x, y);
 }
 
-void Jetpack::Client::handlePlayerEliminated(const Jetpack::Packet &)
+void Jetpack::Client::handleCoinEvent(const Jetpack::Packet &paquet)
 {
-    Jetpack::Utils::consoleLog("PLAYER_ELIMINATED", Jetpack::LogInfo::INFO);
+    if (paquet.payload.empty())
+        return;
+    uint8_t playerId = paquet.payload[0];
+    Jetpack::PlayerState& playerState = this->_sharedState->getPlayerState(playerId);
+    playerState.addCoin();
 }
 
-void Jetpack::Client::handleGameOver(const Jetpack::Packet &)
+void Jetpack::Client::handlePlayerEliminated(const Jetpack::Packet &paquet)
 {
-    Jetpack::Utils::consoleLog("GAME_OVER", Jetpack::LogInfo::SUCCESS);
+    if (paquet.payload.empty())
+        return;
+    uint8_t eliminatedId = paquet.payload[0];
+    this->_sharedState->updatePlayerAliveStatus(eliminatedId, false);
+}
+
+void Jetpack::Client::handleGameOver(const Jetpack::Packet &paquet)
+{
+    if (paquet.payload.empty())
+        return;
+    uint8_t winner = paquet.payload[0];
+
+    if (winner == 255)
+        Jetpack::Utils::consoleLog("Game over: It's a tie!", Jetpack::LogInfo::SUCCESS);
+    else if (winner == this->_playerId)
+        Jetpack::Utils::consoleLog("Game over: You win!", Jetpack::LogInfo::SUCCESS);
+    else
+        Jetpack::Utils::consoleLog("Game over: Player " + std::to_string(winner) + " wins", Jetpack::LogInfo::SUCCESS);
     this->_state = ClientState::Disconnected;
+    this->_sharedState->setGameOver(true);
 }

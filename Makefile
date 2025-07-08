@@ -13,7 +13,9 @@ SRC_COMMON = src/server/Server.cpp \
 			 src/Protocole/Protocole.cpp
 
 SRC_SERVER = src/main_server.cpp $(SRC_COMMON)
-SRC_CLIENT = src/main_client.cpp $(SRC_COMMON)
+
+SRC_CLIENT = src/main_client.cpp \
+			 src/Game/Game.cpp $(SRC_COMMON)
 
 OBJ_SERVER = $(SRC_SERVER:.cpp=.o)
 OBJ_CLIENT = $(SRC_CLIENT:.cpp=.o)
@@ -23,7 +25,7 @@ NAME_CLIENT = jetpack_client
 
 CXX = g++
 CXXFLAGS = -Wall -Wextra -pthread -I./src
-LDFLAGS_CLIENT = -lsfml-graphics -lsfml-window -lsfml-system
+LDFLAGS_CLIENT = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -lsfml-network
 
 
 all: server client

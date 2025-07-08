@@ -123,6 +123,17 @@ bool Jetpack::Server::waitForEvents(std::vector<struct pollfd> &pollFds) const
     return true;
 }
 
+bool Jetpack::Server::waitForEvents(std::vector<struct pollfd> &pollFds, int timeoutMs)
+{
+    try {
+        Jetpack::Network::poll(pollFds.data(), pollFds.size(), timeoutMs);
+    } catch (const Jetpack::Network::NetworkError &e) {
+        Jetpack::Utils::consoleLog("Poll error: " + std::string(e.what()), Jetpack::LogInfo::ERROR);
+        return false;
+    }
+    return true;
+}
+
 void Jetpack::Server::handleNewClient(std::vector<struct pollfd> &pollFds)
 {
     if (pollFds[0].revents & POLLIN) {
@@ -183,7 +194,12 @@ void Jetpack::Server::run()
             continue;
         this->handleNewClient(pollFds);
         this->handleClientActivity(pollFds);
+        if (this->countReadyClients() == NUMBER_CLIENTS) {
+            this->startGameLoop();
+            break;
+        }
     }
+    Jetpack::Utils::consoleLog("game is over", Jetpack::LogInfo::INFO);
 }
 
 /******************************************************************************/
@@ -205,6 +221,14 @@ void Jetpack::Server::lunchStart()
     for (const auto &client : this->_clients)
         Jetpack::ProtocolUtils::sendPacket(client->getSocket(), GAME_START, {});
     Jetpack::Utils::consoleLog("All Clients are Ready. GAME_START send.", Jetpack::LogInfo::SUCCESS);
+    this->_playerStates.clear();
+    for (const auto &client : this->_clients) {
+        PlayerState player(client->getId(), client->getSocket());
+        player.setX(0);
+        player.setY(static_cast<int>(_map.size()) - 1);
+        player.map = _map;
+        this->_playerStates.push_back(player);
+    }
 }
 
 int Jetpack::Server::countReadyClients() const
@@ -243,7 +267,155 @@ void Jetpack::Server::handleLogin(int fd, const Jetpack::Packet&)
         Jetpack::Utils::consoleLog("Client ID " + std::to_string(id) + " is waiting...", Jetpack::LogInfo::INFO);
 }
 
-void Jetpack::Server::handlePlayerAction(int, const Jetpack::Packet&)
+void Jetpack::Server::handlePlayerAction(int fd, const Jetpack::Packet& paquet)
 {
-    return;
+    if (paquet.payload.empty())
+        return;
+    uint8_t actionRaw = paquet.payload[0];
+    Jetpack::PlayerActionType action = static_cast<Jetpack::PlayerActionType>(actionRaw);
+
+    if (action != Jetpack::PlayerActionType::JUMP)
+        return;
+    for (auto &player : this->_playerStates) {
+        if (player.getSocket() == fd && player.isAlive()) {
+            if (player.getY() > 0.0f) {
+                player.setY(player.getY() - JETPACK_JUMP_SPEED * TICK_INTERVAL);
+                player.setHasJumped(true);
+            }
+            break;
+        }
+    }
+}
+
+void Jetpack::Server::sendCoinEvent(uint8_t playerId)
+{
+    std::vector<uint8_t> payload = {playerId};
+
+    for (const auto &client : this->_clients)
+        Jetpack::ProtocolUtils::sendPacket(client->getSocket(), COIN_EVENT, payload);
+}
+
+void Jetpack::Server::sendGameState()
+{
+    std::vector<uint8_t> payload;
+
+    for (const auto &player : this->_playerStates) {
+        payload.push_back(player.getId());
+        payload.push_back(player.isAlive() ? 1 : 0);
+    }
+    for (const auto &client : this->_clients)
+        Jetpack::ProtocolUtils::sendPacket(client->getSocket(), GAME_STATE, payload);
+}
+
+void Jetpack::Server::sendPositionUpdate(uint8_t playerId, float x, float y)
+{
+    std::vector<uint8_t> payload;
+    uint8_t xBytes[sizeof(x)];
+    uint8_t yBytes[sizeof(y)];
+
+    if (playerId == INVALID_ID)
+        return;
+    payload.push_back(playerId);
+    std::memcpy(xBytes, &x, sizeof(x));
+    payload.insert(payload.end(), xBytes, xBytes + sizeof(x));
+    std::memcpy(yBytes, &y, sizeof(y));
+    payload.insert(payload.end(), yBytes, yBytes + sizeof(y));
+    for (const auto &client : this->_clients)
+        Jetpack::ProtocolUtils::sendPacket(client->getSocket(), POSITION_UPDATE, payload);
+}
+
+/******************************************************************************/
+/*                                                                            */
+/*                               GAME                                         */
+/*                                                                            */
+/******************************************************************************/
+void Jetpack::Server::startGameLoop()
+{
+    auto lastTime = std::chrono::steady_clock::now();
+    float accumulator = 0.0f;
+    const int mapHeight = static_cast<int>(_map.size());
+    const int mapWidth = static_cast<int>(_map[0].size());
+    bool gameRunning = true;
+
+    while (gameRunning) {
+        auto now = std::chrono::steady_clock::now();
+        float dt = std::chrono::duration<float>(now - lastTime).count();
+        lastTime = now;
+        accumulator += dt;
+        this->processNetworkEvents();
+        while (accumulator >= TICK_INTERVAL) {
+            accumulator -= TICK_INTERVAL;
+            this->processPlayers(mapHeight, mapWidth);
+        }
+        this->sendGameState();
+        gameRunning = this->isGameStillRunning();
+    }
+    this->handleGameOver();
+}
+
+void Jetpack::Server::processNetworkEvents()
+{
+    auto pollFds = this->preparePollFds();
+
+    if (this->waitForEvents(pollFds, 0))
+        this->handleClientActivity(pollFds);
+}
+
+void Jetpack::Server::processPlayers(int mapHeight, int mapWidth)
+{
+    for (auto &player : this->_playerStates) {
+        if (!player.isAlive())
+            continue;
+        player.setX(player.getX() + SCROLL_SPEED * TICK_INTERVAL);
+        if (!player.hasJumped() && player.getY() < mapHeight - 1)
+            player.setY(player.getY() + GRAVITY_SPEED * TICK_INTERVAL);
+        player.setHasJumped(false);
+        if (player.getTileX() >= mapWidth) {
+            player.setAlive(false);
+            continue;
+        }
+        this->checkCollisions(player);
+        this->sendPositionUpdate(player.getId(), player.getX(), player.getY());
+    }
+}
+
+void Jetpack::Server::checkCollisions(PlayerState &player)
+{
+    TileType tile = player.map[player.getTileY()][player.getTileX()];
+
+    if (tile == TileType::COIN) {
+        player.map[player.getTileY()][player.getTileX()] = TileType::EMPTY;
+        player.addCoin();
+        sendCoinEvent(player.getId());
+    } else if (tile == TileType::ZAPPER)
+        player.setAlive(false);
+}
+
+bool Jetpack::Server::isGameStillRunning()
+{
+    return std::any_of(this->_playerStates.begin(), _playerStates.end(),[](const PlayerState &p) {return p.isAlive();});
+}
+
+void Jetpack::Server::handleGameOver()
+{
+    uint8_t winnerId = INVALID_ID;
+    int bestScore = -1;
+    bool tie = false;
+
+    for (const auto &player : this->_playerStates) {
+        if (player.getCoins() > bestScore) {
+            bestScore = player.getCoins();
+            winnerId = player.getId();
+            tie = false;
+        } else if (player.getCoins() == bestScore) {
+            tie = true;
+        }
+    }
+    if (tie)
+        winnerId = 255;
+    std::vector<uint8_t> payload = {winnerId};
+    for (const auto &client : _clients)
+        Jetpack::ProtocolUtils::sendPacket(client->getSocket(), GAME_OVER, payload);
+    Jetpack::Utils::consoleLog("Game ended (all players dead or map finished)", Jetpack::LogInfo::INFO);
+
 }

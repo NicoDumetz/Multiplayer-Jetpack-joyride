@@ -23,17 +23,31 @@
 #define FTP_PATH_BUFFER 512
 
 // Client -> Serveur
-#define LOGIN_REQUEST        0x01
-#define PLAYER_ACTION        0x05
+#define LOGIN_REQUEST 0x01
+#define PLAYER_ACTION 0x05
 
 // Serveur -> Client
-#define LOGIN_RESPONSE       0x02
-#define MAP_TRANSFER         0x03
-#define GAME_START           0x04
-#define GAME_STATE           0x06
-#define COIN_EVENT           0x07
-#define PLAYER_ELIMINATED    0x08
-#define GAME_OVER            0x09
+#define LOGIN_RESPONSE 0x02
+#define MAP_TRANSFER 0x03
+#define GAME_START 0x04
+#define GAME_STATE 0x06
+#define POSITION_UPDATE 0x07
+#define COIN_EVENT 0x08
+#define PLAYER_ELIMINATED 0x09
+#define GAME_OVER 0x10
+
+
+// constants server
+#define NUMBER_CLIENTS 2
+#define TICK_RATE 60.0f // 60 ticks/seconds
+#define SCROLL_SPEED 2.0f // speed x (tiles/sec)
+#define GRAVITY_SPEED 6.0f // speed gravity
+#define JUMP_DELTA_Y 1.0f // delta Y jump
+#define INVALID_TILE_ID 255
+#define INVALID_ID 255
+#define JETPACK_JUMP_SPEED 6.0f // tiles/second
+#define TICK_INTERVAL (1.0f / 60.0f) // seconds
+
 
 namespace Jetpack {
     enum class TileType {

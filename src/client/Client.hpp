@@ -17,6 +17,7 @@
 #include <functional>
 #include "SocketAddress/SocketAddress.hpp"
 #include "Protocole/Protocole.hpp"
+#include "GameShared/GameShared.hpp"
 
 
 /******************************************************************************/
@@ -43,14 +44,20 @@ namespace Jetpack {
             ~Client();
 
             void run();
+            ClientState getState() const {return this->_state;}
             int getSocket() const {return this->_socket;}
-            void connectToServer();
+            uint8_t getPlayerId () const {return this->_playerId;}
+            void handshakeWithServer();
+            void waitForGameStart();
             void parseMapPayload(const std::vector<uint8_t> &payload);
 
             void handleGameState(const Jetpack::Packet &paquet);
+            void handlePositionUpdate(const Jetpack::Packet &paquet);
+
             void handleCoinEvent(const Jetpack::Packet &paquet);
             void handlePlayerEliminated(const Jetpack::Packet &paquet);
             void handleGameOver(const Jetpack::Packet &paquet);
+            inline std::shared_ptr<SharedGameState> getSharedState() const {return this->_sharedState;}
 
         private:
             int _socket;
@@ -60,8 +67,10 @@ namespace Jetpack {
             std::map<uint8_t, std::function<void(const Packet&)>> _packetHandlers = {
                 {GAME_STATE, [this](const Packet& paquet) {this->handleGameState(paquet);}},
                 {COIN_EVENT, [this](const Packet& paquet) {this->handleCoinEvent(paquet);}},
+                {POSITION_UPDATE, [this](const Packet& paquet) {this->handlePositionUpdate(paquet);}},
                 {PLAYER_ELIMINATED, [this](const Packet& paquet) {this->handlePlayerEliminated(paquet);}},
                 {GAME_OVER, [this](const Packet& paquet) {this->handleGameOver(paquet);}}
             };
+            std::shared_ptr<SharedGameState> _sharedState;
     };
 }
