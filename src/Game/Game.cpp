@@ -12,46 +12,12 @@ Jetpack::Game::Game(std::shared_ptr<Jetpack::Client> client)
     _sharedState(client->getSharedState())
 {
     this->_window.setFramerateLimit(60);
-    initGraphics();
+    this->_font.loadFromFile("assets/font.ttf");
 }
-
 
 Jetpack::Game::~Game()
 {
 }
-
-void Jetpack::Game::initGraphics()
-{
-    float scaleY;
-
-    if (!this->_font.loadFromFile("assets/font.ttf"))
-        throw GameError("Failed to load font");
-
-    if (!this->_mapTexture.loadFromFile("assets/background.png"))
-        throw GameError("Failed to load map image");
-
-    this->_mapSprite.setTexture(this->_mapTexture);
-
-    scaleY = static_cast<float>(WINDOW_HEIGHT) / _mapTexture.getSize().y;
-    _mapSprite.setScale(scaleY, scaleY);
-
-    _mapWidth = _mapTexture.getSize().x * scaleY;
-    _scrollX = 0.0f;
-}
-
-void Jetpack::Game::updateMapScroll(float dt)
-{
-    float maxScroll;
-
-    _scrollX += 100.0f * dt;
-    maxScroll = _mapWidth - WINDOW_WIDTH;
-
-    if (_scrollX > maxScroll)
-        _scrollX = maxScroll;
-
-    _mapSprite.setPosition(-_scrollX, 0);
-}
-
 
 void Jetpack::Game::waitingRoom()
 {
@@ -75,7 +41,7 @@ void Jetpack::Game::waitingRoom()
 }
 void Jetpack::Game::run()
 {
-    sf::Clock clock;
+    // sf::Clock clock;
 
     while (this->_window.isOpen() && _client->getState() == Jetpack::ClientState::Connected) {
         sf::Event event;
@@ -85,15 +51,11 @@ void Jetpack::Game::run()
                 throw GameError("Window closed by user");
             }
         }
-    
-        float deltaTime = clock.restart().asSeconds();
-        updateMapScroll(deltaTime);
-
         // if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space) && clock.getElapsedTime().asSeconds() >= JUMP_INTERVAL) {
         //     Jetpack::ProtocolUtils::sendPacket(this->_client->getSocket(), PLAYER_ACTION, {static_cast<uint8_t>(Jetpack::PlayerActionType::JUMP)});
         //     clock.restart();
         // }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
+        if (this->_window.hasFocus() && sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
             Jetpack::ProtocolUtils::sendPacket(this->_client->getSocket(), PLAYER_ACTION, {static_cast<uint8_t>(Jetpack::PlayerActionType::JUMP)});
         }
 
@@ -114,7 +76,6 @@ void Jetpack::Game::run()
             std::cout << "PLAYER 1:" << "Position: x = " << playerState2.getX() << ", y = " << playerState2.getY() << "Alive: " << (playerState2.isAlive() ? "Yes " : "No ") << "Coins: " << playerState2.getCoins() << std::endl;
         }
         this->_window.clear();
-        this->_window.draw(this->_mapSprite);
         this->_window.display();
     }
 }
