@@ -18,6 +18,8 @@ SRC_CLIENT = src/main_client.cpp \
 			 src/Game/Game.cpp $(SRC_COMMON) \
 			 src/Visuals/GameObject.cpp \
 			 src/Visuals/Coin/Coin.cpp \
+			 src/GameOverScreen/GameOverScreen.cpp \
+			 src/GameWaitingRoom/WaitingRoom.cpp \
 			 src/Visuals/Zapper/Zapper.cpp
 
 OBJ_SERVER = $(SRC_SERVER:.cpp=.o)

@@ -17,6 +17,8 @@
 #include "Visuals/Zapper/Zapper.hpp"
 #include "client/Client.hpp"
 #include "Error/Error.hpp"
+#include "GameOverScreen/GameOverScreen.hpp"
+#include "GameWaitingRoom/WaitingRoom.hpp"
 
 /// COIN ///
 #define COIN_FRAME 6
@@ -46,7 +48,7 @@ namespace Jetpack {
         void run();
         void waitingRoom();
 
-      private:
+    private:
         struct animState;
 
         void initGraphics();
@@ -62,6 +64,11 @@ namespace Jetpack {
         void renderObjects();
         void renderScoreDisplay();
         void initScoreDisplay();
+        void updateCoinsVisibility();
+        void playMusic(const std::string& filename, float volume = 100.f);
+        void playSound(const std::string& name, float volume = 100.f);
+        void showGameOverScreen(uint8_t winnerId);
+        static bool isStoppedSound(const sf::Sound& sound);
 
         enum class state {
             WALK = 0,
@@ -101,10 +108,14 @@ namespace Jetpack {
         float _scrollOffset = 0.0f;
         float _tileSize = TILE_SIZE;
         const float BACKGROUND_ZOOM = 1.25f;
-        void updateCoinsVisibility();
         sf::RectangleShape _scoreBackground;
         std::vector<sf::Text> _scoreTexts;
         sf::Sprite _coinIcon;
+        sf::Music music;
+        std::map<std::string, sf::SoundBuffer> soundBuffers;
+        std::vector<sf::Sound> sounds;
+        std::unique_ptr<GameOverScreen> _gameOverScreen;
+        std::unique_ptr<WaitingRoom> _waitingRoom;
     };
 }
 
