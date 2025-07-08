@@ -17,7 +17,7 @@ namespace Jetpack {
 
 class GameOverScreen {
     public:
-        GameOverScreen(sf::RenderWindow& window, sf::Font& font, std::shared_ptr<SharedGameState> sharedState, uint8_t numberClients);
+        GameOverScreen(sf::RenderWindow& window, sf::Font& font, std::shared_ptr<SharedGameState> sharedState, uint8_t numberClients, int currentPlayerId);
         ~GameOverScreen() = default;
 
         void run(uint8_t winnerId);
@@ -44,11 +44,12 @@ class GameOverScreen {
         sf::Texture _backgroundTexture;
         sf::Sprite _backgroundSprite;
         sf::RectangleShape _textBackground;
-
+        
         
         sf::Clock _animClock;
         bool _fadeOut;
         float _alpha;
+        int _currentPlayerId;
 };
 
 } // namespace Jetpack

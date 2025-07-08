@@ -8,8 +8,8 @@
 #include "GameOverScreen.hpp"
 #include <cmath>
 
-Jetpack::GameOverScreen::GameOverScreen(sf::RenderWindow& window, sf::Font& font, std::shared_ptr<SharedGameState> sharedState, uint8_t numberClients)
-    : _window(window), _font(font), _sharedState(sharedState), _numberClients(numberClients), _fadeOut(false), _alpha(0.0f)
+Jetpack::GameOverScreen::GameOverScreen(sf::RenderWindow& window, sf::Font& font, std::shared_ptr<SharedGameState> sharedState, uint8_t numberClients, int currentPlayerId)
+    : _window(window), _font(font), _sharedState(sharedState), _numberClients(numberClients), _fadeOut(false), _alpha(0.0f), _currentPlayerId(currentPlayerId)
 {
 }
 
@@ -100,28 +100,28 @@ void Jetpack::GameOverScreen::setupUI(uint8_t winnerId)
 void Jetpack::GameOverScreen::setupFinalScores()
 {
     _finalScores.clear();
-    
+    int colCount = (_numberClients > MAXPERCOLUMN) ? 2 : 1;
+    int perColumn = (_numberClients + colCount - 1) / colCount;
+    float columnWidth = _window.getSize().x * 0.4f;
+    float startX = (_window.getSize().x / 2.f) - ((colCount - 1) * columnWidth / 2.f);
+    float baseY = _textBackground.getPosition().y + _textBackground.getSize().y * 0.66f;
+
     for (int i = 0; i < this->_numberClients; ++i) {
         sf::Text scoreText;
         scoreText.setFont(_font);
         scoreText.setCharacterSize(30);
-        
         auto playerState = _sharedState->getPlayerState(i);
         std::string scoreStr = "J" + std::to_string(i) + ": " + std::to_string(playerState.getCoins()) + " pieces";
-        
         scoreText.setString(scoreStr);
-        
-        sf::Color textColor;
-        if (i == 0) textColor = sf::Color(50, 200, 50);
-        else if (i == 1) textColor = sf::Color(200, 50, 50);
-        else textColor = sf::Color(50, 50, 200);
-        
+        sf::Color textColor = i == this->_currentPlayerId ? textColor = sf::Color::Yellow : sf::Color::White;
         scoreText.setFillColor(textColor);
-        
         sf::FloatRect scoreBounds = scoreText.getLocalBounds();
         scoreText.setOrigin(scoreBounds.width / 2.f, scoreBounds.height / 2.f);
-        scoreText.setPosition(_window.getSize().x / 2.f, _window.getSize().y / 2.f + 50 + i * 40);
-        
+        int col = i / perColumn;
+        int row = i % perColumn;
+        float posX = startX + col * columnWidth;
+        float posY = baseY + row * 40.f;
+        scoreText.setPosition(posX, posY);
         _finalScores.push_back(scoreText);
     }
 }

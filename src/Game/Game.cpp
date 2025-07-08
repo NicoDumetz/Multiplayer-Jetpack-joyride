@@ -122,7 +122,7 @@ void Jetpack::Game::waitingRoom()
 void Jetpack::Game::showGameOverScreen(uint8_t winnerId)
 {
     if (!_gameOverScreen) {
-        _gameOverScreen = std::make_unique<GameOverScreen>(_window, _font, _sharedState, this->_client->getExpectedPlayerCount());
+        _gameOverScreen = std::make_unique<GameOverScreen>(_window, _font, _sharedState, this->_client->getExpectedPlayerCount(), this->_client->getPlayerId());
         _gameOverScreen->_soundCallback = [this](const std::string& name, float volume) {
             this->playSound(name, volume);
         };

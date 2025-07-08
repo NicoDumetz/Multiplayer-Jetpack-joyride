@@ -83,6 +83,7 @@
 
 #define ANIMATION_FRAME_TIME    0.45f    // Time between frames in seconds
 #define FIXED_PLAYER_X          (4 * TILE_SIZE) // X position where players are drawn
+#define MAXPERCOLUMN           5       // Max number of players per column
 
 /******************************************************************************/
 /*                                                                            */
