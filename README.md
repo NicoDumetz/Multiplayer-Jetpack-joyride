@@ -58,12 +58,15 @@ make
 ### Screenshots
 
 Waiting Room:
+
 ![Waiting Room](doc/waiting_room.png)
 
 In-game (running and avoiding zappers):
+
 ![Gameplay](doc/gameplay.png)
 
 Game Over screen:
+
 ![Game Over](doc/gameover_screen.png)
 
 ---
