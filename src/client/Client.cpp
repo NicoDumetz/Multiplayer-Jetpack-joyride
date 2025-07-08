@@ -43,19 +43,6 @@ Jetpack::Client::~Client()
 /*                                                                            */
 /******************************************************************************/
 
-void Jetpack::Client::parseMapPayload(const std::vector<uint8_t> &payload)
-{
-    this->_map.clear();
-    std::vector<TileType> row;
-
-    for (uint8_t val : payload) {
-        val == '\n' && !row.empty() ? (this->_map.push_back(row), row.clear()) : void();
-        val <= static_cast<uint8_t>(TileType::ZAPPER) ? row.push_back(static_cast<TileType>(val)) : void();
-    }
-    if (!row.empty())
-        this->_map.push_back(row);
-}
-
 void Jetpack::Client::handshakeWithServer()
 {
     Jetpack::ProtocolUtils::sendPacket(this->_socket, LOGIN_REQUEST, {});
@@ -69,8 +56,7 @@ void Jetpack::Client::handshakeWithServer()
     map = Jetpack::ProtocolUtils::receivePacket(this->_socket);
     if (map.type != MAP_TRANSFER)
         throw ClientError("Expected MAP_TRANSFER");
-    this->parseMapPayload(map.payload);
-    Jetpack::Utils::consoleLog("Map was successfully received.", Jetpack::LogInfo::INFO);
+    this->handleMap(map);
     this->_state = ClientState::Waiting;
     Jetpack::Utils::consoleLog("Waiting game start...", Jetpack::LogInfo::INFO);
 }
@@ -143,8 +129,14 @@ void Jetpack::Client::handleCoinEvent(const Jetpack::Packet &paquet)
     if (paquet.payload.empty())
         return;
     uint8_t playerId = paquet.payload[0];
-    Jetpack::PlayerState& playerState = this->_sharedState->getPlayerState(playerId);
+    int coinX;
+    int coinY;
+
+    std::memcpy(&coinX, &paquet.payload[1], sizeof(coinX));
+    std::memcpy(&coinY, &paquet.payload[1 + sizeof(coinX)], sizeof(coinY));
+    Jetpack::PlayerState &playerState = this->_sharedState->getPlayerState(playerId);
     playerState.addCoin();
+    playerState.addCoinCollected(coinX, coinY);
 }
 
 void Jetpack::Client::handlePlayerEliminated(const Jetpack::Packet &paquet)
@@ -190,4 +182,20 @@ void Jetpack::Client::sendJump()
         this->_ACKPlayerAction = false;
     else
         sendJump();
+}
+
+void Jetpack::Client::handleMap(const Jetpack::Packet &paquet)
+{
+    uint8_t playerId = paquet.payload[0];
+    std::vector<TileType> playerMap;
+
+    for (size_t i = 1; i < paquet.payload.size(); i++) {
+        if (paquet.payload[i] == '\n') {
+            this->_sharedState->getPlayerState(playerId).map.push_back(playerMap);
+            playerMap.clear();
+        } else
+            playerMap.push_back(static_cast<TileType>(paquet.payload[i]));
+    }
+    if (playerId == this->_playerId)
+        this->_map = this->_sharedState->getPlayerState(playerId).map;
 }
