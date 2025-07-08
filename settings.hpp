@@ -81,7 +81,7 @@
 #define PLAYER_SPRITE_WIDTH     (SPRITE_SHEET_WIDTH / 4) // One frame width (4 frames per row)
 #define PLAYER_SPRITE_HEIGHT    (SPRITE_SHEET_HEIGHT / 6) // One frame height (6 rows total)
 
-#define ANIMATION_FRAME_TIME    0.1f    // Time between frames in seconds
+#define ANIMATION_FRAME_TIME    0.45f    // Time between frames in seconds
 #define FIXED_PLAYER_X          (4 * TILE_SIZE) // X position where players are drawn
 
 /******************************************************************************/

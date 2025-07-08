@@ -6,8 +6,13 @@
 */
 
 #include "Game/Game.hpp"
+#include "PlayerState/PlayerState.hpp"
 #include "Utils/Utils.hpp"
+#include <SFML/Window/WindowStyle.hpp>
 #include <cmath>
+#include <cstddef>
+#include <cstdlib>
+#include <iostream>
 
 Jetpack::Game::Game(std::shared_ptr<Jetpack::Client> client)
     : _client(client),
@@ -16,6 +21,7 @@ Jetpack::Game::Game(std::shared_ptr<Jetpack::Client> client)
 {
     _window.setFramerateLimit(60);
     initGraphics();
+    std::srand(std::time(nullptr));
 }
 
 Jetpack::Game::~Game() {}
@@ -45,6 +51,7 @@ void Jetpack::Game::initGraphics()
         sprite.setScale(PLAYER_SCALE, PLAYER_SCALE);
         sprite.setOrigin(PLAYER_SPRITE_WIDTH * PLAYER_ORIGIN_X, PLAYER_SPRITE_HEIGHT * PLAYER_ORIGIN_Y);
         _playerSprites.push_back(sprite);
+        _playerAnimState.emplace_back();
     }
     _animationClock.restart();
     initScoreDisplay();
@@ -121,25 +128,78 @@ void Jetpack::Game::updateMapScroll(float dt)
 
 void Jetpack::Game::updateAnimation()
 {
-    if (_animationClock.getElapsedTime().asSeconds() < _frameTime)
-        return;
-    _currentFrame = (_currentFrame + 1) % 4;
-    for (std::size_t i = 0; i < _playerSprites.size(); ++i) {
-        auto state = _sharedState->getPlayerState(i);
-        int row = getPlayerAnimationRow(i, state.getY());
-        _playerSprites[i].setTextureRect(sf::IntRect(_currentFrame * PLAYER_SPRITE_WIDTH, row * PLAYER_SPRITE_HEIGHT, PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT));
-    }
+    float time = _animationClock.getElapsedTime().asSeconds();
+    bool changes = false;
 
-    _animationClock.restart();
+    for (std::size_t i = 0; i < _playerSprites.size(); ++i) {
+        this->_playerAnimState[i].clock += time;
+        if (this->_playerAnimState[i].clock < _frameTime + this->_playerAnimState[i].slow
+            || this->_playerAnimState[i]._state == state::NONE)
+            continue;
+        this->_playerAnimState[i].clock -= _frameTime + this->_playerAnimState[i].slow;
+        this->_playerAnimState[i].frame = (this->_playerAnimState[i].frame + 1) % 4;
+        auto& state = _sharedState->getPlayerState(i);
+        int row = getPlayerAnimationRow(state, this->_playerAnimState[i]);
+        _playerSprites[i].setTextureRect(sf::IntRect(this->_playerAnimState[i].frame * PLAYER_SPRITE_WIDTH, row * PLAYER_SPRITE_HEIGHT, PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT));
+        changes = true;
+    }
+    if (changes)
+        _animationClock.restart();
 }
 
-int Jetpack::Game::getPlayerAnimationRow(int id, float y) const
+
+int Jetpack::Game::getPlayerAnimationRow(Jetpack::PlayerState& playerState, animState& state)
 {
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space) && _client->getPlayerId() == id)
-        return 1;
-    if (y < TILE_ROWS - 2)
-        return 1;
-    return 0;
+    bool isOnGround = playerState.getY() >= TILE_ROWS - 2;
+
+    if (state._state == state::SPIN || state._state == state::BURN || state._state == state::ELECTROCUTE) {
+        if (state.frame != 0)
+            return static_cast<int>(state._state);
+        if (state.loop == 0) {
+            state._state = state::NONE;
+            return static_cast<int>(Game::state::NONE);
+        }
+        --state.loop;
+        return static_cast<int>(state._state);
+    }
+
+    if (!playerState.isAlive() && isOnGround) {
+        state.frame = 0;
+        state._state = state::SPIN;
+        return static_cast<int>(Game::state::SPIN);
+    }
+
+    if (!playerState.isAlive()) {
+        state.frame = 0;
+        state._state = (rand() % 2) ? Game::state::ELECTROCUTE : Game::state::BURN;
+        return static_cast<int>(state._state);
+    }
+
+    if (state._state == state::FLY || state._state == state::WALK)
+        state.slow = 0.f;
+
+    if (!isOnGround) {
+        state._state = state::FLY;
+        return static_cast<int>(Game::state::FLY);
+    }
+
+    if (isOnGround && state._state == state::FLY) {
+        state.frame = 0;
+        state.slow = 0.15;
+        state._state = Game::state::LAND;
+        return static_cast<int>(state::LAND);
+    }
+
+    if (isOnGround && state._state == state::LAND && state.frame == 0) {
+        state._state = state::WALK;
+        return static_cast<int>(state::WALK);
+    }
+
+    if (isOnGround && state._state == state::LAND)
+        return static_cast<int>(state::LAND);
+
+    state._state = state::WALK;
+    return static_cast<int>(state::WALK);
 }
 
 void Jetpack::Game::updatePlayerPositions()
@@ -169,7 +229,7 @@ void Jetpack::Game::renderPlayers()
         return;
     for (std::size_t i = 0; i < _playerSprites.size(); ++i) {
         auto state = _sharedState->getPlayerState(i);
-        if (!state.isAlive()) continue;
+        if (!state.isAlive() && this->_playerAnimState[i]._state == state::NONE) continue;
         if (_client->getPlayerId() == i)
             _playerSprites[i].setColor(sf::Color::White);
         else
