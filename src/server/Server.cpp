@@ -330,19 +330,19 @@ void Jetpack::Server::sendPositionUpdate(uint8_t playerId, float x, float y)
         Jetpack::ProtocolUtils::sendPacket(client->getSocket(), POSITION_UPDATE, payload);
 }
 
-void Jetpack::Server::sendMap(int playerId, const std::vector<std::vector<TileType>>& map)
+void Jetpack::Server::sendMap(int playerId, const std::vector<std::vector<TileType>> &map)
 {
-    // Construire le payload contenant la carte du joueur
     std::vector<uint8_t> payload;
+    payload.push_back(playerId);
+
     for (const auto &row : map) {
-        for (TileType tile : row)
+        for (TileType tile : row) {
             payload.push_back(static_cast<uint8_t>(tile));
+        }
         payload.push_back('\n');
     }
-
-    // Envoyer le paquet MAP_TRANSFER au client spécifié par playerId
-    Jetpack::ProtocolUtils::sendPacket(this->_clients[playerId]->getSocket(), MAP_TRANSFER, payload);
-    Jetpack::Utils::consoleLog("Sent map to Player ID " + std::to_string(playerId), Jetpack::LogInfo::INFO);
+    for (const auto &client : this->_clients)
+        Jetpack::ProtocolUtils::sendPacket(client->getSocket(), MAP_TRANSFER, payload);
 }
 
 /******************************************************************************/

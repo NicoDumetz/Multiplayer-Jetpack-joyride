@@ -70,6 +70,8 @@ void Jetpack::Client::waitForGameStart()
             break;
         else if (start.type == WAITING_PLAYERS_COUNT)
             this->_sharedState->setNumberClients(this->_sharedState->getNumberClients() + 1);
+        else if (start.type == MAP_TRANSFER)
+            this->handleMap(start);
     }
     this->_state = ClientState::Connected;
     Jetpack::Utils::consoleLog("All players are ready. Game is starting!", Jetpack::LogInfo::SUCCESS);
