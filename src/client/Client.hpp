@@ -49,6 +49,7 @@ namespace Jetpack {
             uint8_t getPlayerId () const {return this->_playerId;}
             void handshakeWithServer();
             void waitForGameStart();
+            void parseMapPayload(const std::vector<uint8_t> &payload);
 
             void handleGameState(const Jetpack::Packet &paquet);
             void handlePositionUpdate(const Jetpack::Packet &paquet);
@@ -59,7 +60,6 @@ namespace Jetpack {
             inline std::shared_ptr<SharedGameState> getSharedState() const {return this->_sharedState;}
             void sendJump();
             void handleActionAck(const Jetpack::Packet &paquet);
-            void handleMap(const Jetpack::Packet &paquet);
 
         private:
             int _socket;

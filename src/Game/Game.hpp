@@ -32,13 +32,32 @@ namespace Jetpack
             ~Game();
             void waitingRoom();
             void run();
+            void initGraphics();
+            void updateMapScroll(float dt);
+            void updateAnimation();
+
         private:
             std::shared_ptr<Jetpack::Client> _client;
             sf::RenderWindow _window;
             sf::Clock _clock;
             sf::Font _font;
             std::shared_ptr<SharedGameState> _sharedState;
-        };
+            sf::Texture _mapTexture;
+            sf::Sprite _mapSprite;
+            sf::Texture _playerSpriteSheet;
+            sf::Sprite _playerSprite1;
+            sf::Sprite _playerSprite2;
+            sf::Clock _animationClock;
+            int _currentFrame;
+            float _frameTime;
+            float _scrollX;
+            float _mapWidth;
+            float _tileSize;
+            
+            void updatePlayerPositions();
+            void renderPlayers();
+            int getPlayerAnimationRow(int playerId, float playerY) const;
+    };
 }
 
 
