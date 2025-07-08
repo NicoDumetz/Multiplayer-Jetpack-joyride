@@ -144,10 +144,11 @@ void Jetpack::WaitingRoom::updateUI(float deltaTime)
     else if (_client->getPlayerId() >= 2) playerColor = sf::Color(50, 50, 200);
 
     _playerInfoText.setString("Vous etes le Joueur " + std::to_string(_client->getPlayerId()));
-    _playerInfoText.setFillColor(playerColor);
+    _playerInfoText.setFillColor(sf::Color::Yellow);
     sf::FloatRect infoBounds = _playerInfoText.getLocalBounds();
     _playerInfoText.setOrigin(infoBounds.width / 2.f, infoBounds.height / 2.f);
     _playerInfoText.setPosition(_window.getSize().x / 2.f, _window.getSize().y / 2.f + 50);
+
 }
 
 void Jetpack::WaitingRoom::updatePlayers(float deltaTime)
